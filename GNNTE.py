@@ -52,12 +52,12 @@ class GraphTriplesDataset(Dataset):
     def get(self, idx:int) -> tuple:
         t = self.triples.iloc[idx][:]
         try:
-            g1 = self.graphs[str(t[0])]
-            g2 = self.graphs[str(t[1])]
+            g1 = self.graphs[str(t.iloc[0])]
+            g2 = self.graphs[str(t.iloc[1])]
         except:
-            g1 = self.graphs[str(int(t[0]))]
-            g2 = self.graphs[str(int(t[1]))]
-        return Data(g1.X, g1.edges), Data(g2.X, g2.edges), t[2]
+            g1 = self.graphs[str(int(t.iloc[0]))]
+            g2 = self.graphs[str(int(t.iloc[1]))]
+        return Data(g1.X, g1.edges), Data(g2.X, g2.edges), t.iloc[2]
     
     
 def train_test_valid_split(df: pd.DataFrame, ttv_ratio: set=(0.8,0.1,0.1)) -> set:
@@ -86,7 +86,7 @@ class GNNTE(nn.Module):
                 nn.init.xavier_uniform_(p)
 
     def __init__(self, hidden_channels: int=300, num_layers: int=3, dropout: float=0, act: str="relu", 
-                 gnn_type: str='GIN', model_file: str=None, relu: bool=True) -> None:
+                 gnn_type: str='GIN', initial_embedding_method: str='fasttext', model_file: str=None, relu: bool=True) -> None:
         """The init function
 
         Args:
@@ -95,6 +95,7 @@ class GNNTE(nn.Module):
             dropout (float, optional): dropout probability for the weights. Defaults to 0.
             act (str, optional): The activation function between the layers. Defaults to "relu".
             gnn_type (str): the gnn to use, accepted 'GIN', 'GAT', and 'GraphSAGE'. Defaults to 'GIN'
+            initial_embedding_method (str, optional): describes the method used to generate the initial embeddings of the nodes in the graph, it determines the number of in_channels. Accepted values are 'fasttext' and 'BERT'. Defaults to 'fasttext'.
             model_file (str, optional): this parameter can be used to load a pretrained model from a model_file
             relu (bool, optional): if set to Tre a relu layer will be added at the end of the network, it will prevent negative cosine similarities between the embeddings
         """
@@ -106,35 +107,26 @@ class GNNTE(nn.Module):
             self.dropout = state_dict['dropout']
             self.act = state_dict['act']
             self.gnn_type = state_dict['gnn_type']
+            self.in_channels = state_dict['in_channels']
             self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-            # if self.gnn_type == 'GIN':
-            #     self.model = GIN(-1, self.hidden_channels, self.num_layers, dropout=dropout, act=act).to(self.device)
-            # elif self.gnn_type == 'GAT':
-            #     self.model = GAT(-1, self.hidden_channels, self.num_layers, dropout=dropout, act=act).to(self.device)
-            # elif self.gnn_type == 'GraphSAGE':
-            #     self.model = GraphSAGE(-1, self.hidden_channels, self.num_layers, dropout=dropout, act=act).to(self.device)
-            # else:
-            #     raise NotImplementedError
-            # self.load_state_dict(state_dict['model_state_dict'])
         else:
             self.hidden_channels = hidden_channels
             self.num_layers = num_layers
             self.dropout = dropout
             self.act = act
             self.gnn_type = gnn_type
+            if initial_embedding_method == 'fasttext':
+                self.in_channels = 300
+            elif initial_embedding_method == 'BERT':
+                self.in_channels = 128
+            else:
+                raise NotImplementedError
             self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-            # if self.gnn_type == 'GIN':
-            #     self.model = GIN(-1, hidden_channels, num_layers, dropout=dropout, act=act).to(self.device)
-            # elif self.gnn_type == 'GAT':
-            #     self.model = GAT(-1, hidden_channels, num_layers, dropout=dropout, act=act).to(self.device)
-            # elif self.gnn_type == 'GraphSAGE':
-            #     self.model = GraphSAGE(-1, hidden_channels, num_layers, dropout=dropout, act=act).to(self.device)
-            # else:
-            #     raise NotImplementedError
+
         if self.gnn_type == 'GIN':
-            self.model = GIN(-1, self.hidden_channels, self.num_layers, dropout=dropout, act=act).to(self.device)
+            self.model = GIN(self.in_channels, self.hidden_channels, self.num_layers, dropout=dropout, act=act).to(self.device)
         elif self.gnn_type == 'GAT':
-            self.model = GAT(-1, self.hidden_channels, self.num_layers, dropout=dropout, act=act).to(self.device)
+            self.model = GAT(-1, self.in_channels, self.num_layers, dropout=dropout, act=act).to(self.device)
         elif self.gnn_type == 'GraphSAGE':
             self.model = GraphSAGE(-1, self.hidden_channels, self.num_layers, dropout=dropout, act=act).to(self.device)
         else:
@@ -240,7 +232,7 @@ def train_test_pipeline(triple_file: str, graph_file: str, model_file: str, hidd
     """
     set_seed()
     # Creazione 3 datasets
-    print('Loading datasets, it could take some time....')
+    print('Loading datasets, it may take some time....')
     all_data = load_test_training_stuff(triple_file, graph_file)
 
     tables = train_test_valid_split(all_data['triples'], ttv_ratio)
@@ -346,7 +338,8 @@ def train(model, train_dataset, valid_dataset, batch_size, lr, num_epochs, devic
                 'act' : model.act,
                 'gnn_type' : model.gnn_type,
                 'optimizer_state_dict': optimizer.state_dict(),
-                'epoch': epoch
+                'epoch': epoch,
+                'in_channels': model.in_channels
             }
             torch.save(checkpoint, model_file)
         scheduler.step()
@@ -559,7 +552,7 @@ def model_inference(model: GNNTE, data_loader: DataLoader, device: str) -> set:
 def run_GNNTE_experiment(project_name: str, dataset: str, lr: float, batch_size: int,
                          num_epochs: int, out_channels: int, n_layers: int, dropout: float,
                          n_sample:str, weight_decay: float, step_size: int, gamma: float,
-                         gnn_type: str, relu: bool=True) -> None:
+                         gnn_type: str, relu: bool=False) -> None:
     """Utility function to run experiments that will be logged in wandb
 
     Args:
@@ -617,7 +610,7 @@ def run_GNNTE_experiment(project_name: str, dataset: str, lr: float, batch_size:
 
 if __name__ == "__main__":
     name = 'GNNTE'
-    dataset = "/dati/home/francesco.pugnaloni/wikipedia_tables/training_data/1000_samples"
+    dataset = "/home/francesco.pugnaloni/GNNTE/wikipedia_datasets/1000_samples"
     lr = 0.001
     batch_size = 128
     num_epochs = 2
