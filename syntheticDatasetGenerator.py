@@ -6,6 +6,41 @@ from _script_generate_graph_dict import generate_graph_dictionary
 import pickle
 import time
 
+def extract_token_list_to_populate_tables(table_dict_path: str, outpath: str, number_of_tokens: int=1000000, token_limit_per_table: int=15) -> None:
+    """
+    Extract a list of tokens from an input table_dict.
+    Args:
+        table_dict_path (str): source dictionary containing pandas dataframes.
+        outpath (str): file where to save the token_list in .pkl format.
+        number_of_tokens (int, optional): desired number of total tokens. Defaults to 50000.
+        token_limit_per_table (int, optional): upper bound to how many tokens can be extracted from a single table. Defaults to 10.
+    """
+    print("Starting")
+    with open(table_dict_path, 'rb') as f:
+        table_dict = pickle.load(f)
+    out = []
+    token_count = 0
+    for k in table_dict.keys():
+        print(f'Found {token_count} tokens')
+        t = table_dict[k]
+        table_token_count = 0
+        for r in range(t.shape[0]):
+            for c in range(t.shape[1]):
+                value = t.iloc[r][c]
+                if pd.isnull(value):
+                    continue
+                out.append(value)
+                token_count+=1
+                table_token_count+=1
+            if table_token_count >= token_limit_per_table:
+                break
+        if token_count >= number_of_tokens:
+            break
+    print('saving')
+    with open(outpath, 'wb') as f:
+        pickle.dump(out, f)
+
+
 def generateDatasetList(n_datasets: int, max_n_cols: int, max_n_rows: int, sentences: list=None) -> list:
     """Function that generates a new list of datasets
 
@@ -101,4 +136,6 @@ def load_test_training_stuff(filedir: str="/home/francesco.pugnaloni/wikipedia_t
     return {'tables':td, 'graphs':gd, 'triples':triples}
 
 if __name__ == '__main__':
-    generate_test_training_stuff(30, 100, outdir="/home/francesco.pugnaloni/GNNTE/tmp", embedding_method='BERT')
+    #generate_test_training_stuff(30, 100, outdir="/home/francesco.pugnaloni/GNNTE/tmp", embedding_method='BERT')
+    extract_token_list_to_populate_tables("/home/francesco.pugnaloni/GNNTE/wikipedia_datasets/1MR/full_table_dict_with_id.pkl","/home/francesco.pugnaloni/GNNTE/synthetic_dataset/tokenlist1M.pkl")
+    #extract_token_list_to_populate_tables("/home/francesco.pugnaloni/GNNTE/wikipedia_datasets/1kR/1kR.pkl","/home/francesco.pugnaloni/GNNTE/synthetic_dataset/tokenlist50k.pkl")
