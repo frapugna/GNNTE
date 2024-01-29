@@ -2,6 +2,7 @@ import pandas as pd
 import random
 from graph import *
 from trainingTablesPreprocessing import *
+from _script_generate_graph_dict import generate_graph_dictionary
 import pickle
 import time
 
@@ -57,7 +58,7 @@ def processDataset(df: pd.DataFrame, embedding_buffer: Embedding_buffer, string_
 
 def generate_test_training_stuff(num_tables: int, num_samples: int, 
                                  outdir: str="/home/francesco.pugnaloni/wikipedia_tables/small_dataset_debug",
-                                 w: int=10, h: int=10) -> None:
+                                 w: int=10, h: int=10, embedding_method: str='fasttext') -> None:
     """Generate the files necessary for training and testing
 
     Args:
@@ -66,13 +67,14 @@ def generate_test_training_stuff(num_tables: int, num_samples: int,
         outdir (str, optional): directory where to save the generated data. Defaults to "/home/francesco.pugnaloni/wikipedia_tables/small_dataset_debug".
         w (int, optional): max width of the datasets. Defaults to 10.
         h (int, optional): max height of the datasets. Defaults to 10.
+        embedding_method (str, optional): embedding method to use, possible 'fasttext' or 'BERT'. Defaults to 'fasttext'.
     """
     random.seed(42)
     dl = generateDatasetList(num_tables, h, w)
     td = {str(i):dl[i] for i in range(len(dl))}
     with open(outdir+'/tables.pkl', 'wb') as f:
         pickle.dump(td, f)
-    dg = generate_graph_dictionary(outdir+'/tables.pkl', outdir+'/graphs.pkl')
+    dg = generate_graph_dictionary(outdir+'/tables.pkl', outdir+'/graphs.pkl', embedding_generation_method=embedding_method)
     triples = []
     for _ in range(num_samples):
         a = random.randint(0,len(dg)-1)
@@ -99,4 +101,4 @@ def load_test_training_stuff(filedir: str="/home/francesco.pugnaloni/wikipedia_t
     return {'tables':td, 'graphs':gd, 'triples':triples}
 
 if __name__ == '__main__':
-    generate_test_training_stuff(50, 100)
+    generate_test_training_stuff(30, 100, outdir="/home/francesco.pugnaloni/GNNTE/tmp", embedding_method='BERT')

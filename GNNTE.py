@@ -118,7 +118,7 @@ class GNNTE(nn.Module):
             if initial_embedding_method == 'fasttext':
                 self.in_channels = 300
             elif initial_embedding_method == 'BERT':
-                self.in_channels = 128
+                self.in_channels = 768
             else:
                 raise NotImplementedError
             self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')

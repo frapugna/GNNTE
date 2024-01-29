@@ -156,40 +156,6 @@ def drop_small_tables(table_file: str, old_triple_file: str,new_triple_file_out:
     out.to_csv(new_triple_file_out, index=False)
 
     return out
-    
-
-def generate_graph_dictionary(table_dict_path: str, out_path: str) -> dict:
-    """Generate a graph dictionary from a table dictionary
-
-    Args:
-        table_dict_path (str): path to the table dictionary
-        out_path (str): path to the file where to save the new graph dictionary
-
-    Returns:
-        dict: the generated graph dictionary
-    """
-    with open(table_dict_path,'rb') as f:
-        table_dict = pickle.load(f)
-    
-    embedding_buffer = FasttextEmbeddingBuffer(model='fasttext-wiki-news-subwords-300')
-    string_token_preprocessor = String_token_preprocessor()
-
-    out = {}
-
-    print('Graphs generation starts')
-    for k in tqdm(table_dict.keys()):
-        try:
-            out[k] = Graph(table_dict[k], k, embedding_buffer, string_token_preprocessor, token_length_limit=None)
-        except:
-            out[k] = None
-    print('Graph generation ends')
-
-    print('Saving output')
-    with open(out_path, 'wb') as f:
-        pickle.dump(out, f)   
-    print('Output saved')
-
-    return out
 
 if __name__ == '__main__':
     # ids = compute_table_ids("/dati/home/francesco.pugnaloni/wikipedia_tables/processed_tables/test_samples_base.csv", 
@@ -202,8 +168,8 @@ if __name__ == '__main__':
     #                     "/dati/home/francesco.pugnaloni/wikipedia_tables/processed_tables/table_id_set.pkl",
     #                     "/home/francesco.pugnaloni/wikipedia_tables/processed_tables/full_table_dict_with_id.pkl"
     #                     )
-    
-    gd = generate_graph_dictionary("/dati/home/francesco.pugnaloni/wikipedia_tables/processed_tables/full_table_dict_with_id.pkl", "/dati/home/francesco.pugnaloni/wikipedia_tables/processed_tables/full_graphs_dict_with_id.pkl")
+    print('Hello world!')
+    #gd = generate_graph_dictionary("/dati/home/francesco.pugnaloni/wikipedia_tables/processed_tables/full_table_dict_with_id.pkl", "/dati/home/francesco.pugnaloni/wikipedia_tables/processed_tables/full_graphs_dict_with_id.pkl")
 
     # drop_small_tables("/dati/home/francesco.pugnaloni/wikipedia_tables/processed_tables/full_table_dict_with_id.pkl",
     #                   "/dati/home/francesco.pugnaloni/wikipedia_tables/processed_tables/test_samples_no_ones.csv",
