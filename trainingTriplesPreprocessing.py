@@ -313,7 +313,15 @@ def re_generate_triple_datasets(input_file_base: str, input_file_hybrid: str, ou
     print('Thresholded datasets generation starts')
     generate_csv_min_mean(out_directory+"/test_samples_base.csv", out_directory)
     print('Thresholded datasets generation ends')
-    
+
+# def generate_tables_to_triples(triple_file: str) -> dict:
+#     triples = pd.read_csv(triple_file)
+
+
+# def generate_train_test_valid_split(tables_to_triples: str, triple_file: str, p_train: float=0.8, p_test: str=0.1, p_valid: float=0.1):
+#     pass
+
+
 if __name__=='__main__':
     re_generate_triple_datasets("/dati/home/francesco.pugnaloni/wikipedia_tables/unprocessed_tables/triples_wikipedia_tables.csv",
                                 "/dati/home/francesco.pugnaloni/wikipedia_tables/unprocessed_tables/hybrid_dataset_stats.csv",

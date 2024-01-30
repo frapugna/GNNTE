@@ -86,7 +86,7 @@ class GNNTE(nn.Module):
                 nn.init.xavier_uniform_(p)
 
     def __init__(self, hidden_channels: int=300, num_layers: int=3, dropout: float=0, act: str="relu", 
-                 gnn_type: str='GIN', initial_embedding_method: str='fasttext', model_file: str=None, relu: bool=True) -> None:
+                 gnn_type: str='GIN', initial_embedding_method: str='fasttext', model_file: str=None, relu: bool=False) -> None:
         """The init function
 
         Args:
@@ -147,15 +147,8 @@ class GNNTE(nn.Module):
         Returns:
             torch.tensor: a tensor composed by <num_graphs_int_the_batch> rows, every row will be the embedding of the corresponding graph
         """
-        #calcolo lista lunghezze
-        # intervals = [0]
-        # for i in range(b.num_graphs):
-        #     intervals.append(b[i]['x'].shape[0]+intervals[-1])
-        #gin
         out_gin = self.model(b['x'], b['edge_index'])
-        #medie
-        # means = [torch.mean(out_gin[intervals[i]:intervals[i+1]][:], dim=0).unsqueeze(dim=0) for i in range(b.num_graphs)]
-        # return torch.cat(means, dim=0)
+        
         out_pooling = global_mean_pool(out_gin, b.batch)
         if self.relu != None:
             out_relu = self.relu(out_pooling)
