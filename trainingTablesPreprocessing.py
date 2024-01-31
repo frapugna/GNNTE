@@ -157,6 +157,23 @@ def drop_small_tables(table_file: str, old_triple_file: str,new_triple_file_out:
 
     return out
 
+def list_files(directory) -> list:
+    """given the path of a directory return the list of its files
+
+    Args:
+        directory (_type_): path to the directory to explore
+
+    Returns:
+        list: list of filenames
+    """
+    l=[]
+    with os.scandir(directory) as entries:
+        for entry in entries:
+            if entry.is_file():
+                l.append(entry.name)
+    return l
+
+
 if __name__ == '__main__':
     # ids = compute_table_ids("/dati/home/francesco.pugnaloni/wikipedia_tables/processed_tables/test_samples_base.csv", 
     #                         "/dati/home/francesco.pugnaloni/wikipedia_tables/processed_tables/table_id_set.pkl")

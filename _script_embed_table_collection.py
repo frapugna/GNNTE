@@ -1,58 +1,83 @@
 from GNNTE import *
 from _script_generate_graph_dict import generate_graph_dictionary
+from graph import Graph
+import sys
 
-
-class TablesDataset(Dataset):
+class GraphsDataset(Dataset):
     
-    def __init__(self, triples: pd.DataFrame, graphs: dict, tables: Optional[dict] = None) -> None:
-        """Init function
+    def __init__(self, graphs: dict) -> None:
+        """init method
 
         Args:
-            triples (pd.DataFrame): Dataframe that contains triples ()'r_id','s_id','table_overlap')
-            graphs (dict): a dictionary containing a graph for every key that appears in the triples dataset
-            tables (Optional[dict], optional): not implemented. Defaults to None.
+            graphs (dict): a dictionary containing the graph-versions of the tables to embed
         """
-        super(GraphTriplesDataset, self).__init__()
-        self.triples = triples
+        super(GraphsDataset, self).__init__()
         self.graphs = graphs
+        self.keys = list(graphs.keys())
 
     def len(self) -> int:
-        return len(self.triples)
+        """len method
+
+        Returns:
+            int: number of graphs in the dataset
+        """
+        return len(self.keys)
     
-    def get(self, idx:int) -> tuple:
-        t = self.triples.iloc[idx][:]
+    def get(self, idx:int) -> Graph:
+        """get method
+
+        Args:
+            idx (int): number from zero to max_length that represents a graph
+
+        Returns:
+            Graph: the graph associated with the idx
+        """
+        k = self.keys[idx]
         try:
-            g1 = self.graphs[str(t.iloc[0])]
-            g2 = self.graphs[str(t.iloc[1])]
+            g1 = self.graphs[str(k)]
         except:
-            g1 = self.graphs[str(int(t.iloc[0]))]
-            g2 = self.graphs[str(int(t.iloc[1]))]
-        return Data(g1.X, g1.edges), Data(g2.X, g2.edges), t.iloc[2]
+            g1 = self.graphs[str(int(k))]
+        return Data(g1.X, g1.edges)
 
-def embed(model: GNNTE, valid_dataloader: DataLoader, criterion: nn.MSELoss, device: str) -> float:
-    avg_loss = 0.0
+def embed(model: GNNTE, dataloader: DataLoader, device: str) -> tuple:
+    """_summary_
+
+    Args:
+        model (GNNTE): an instance of a GNNTE model
+        dataloader (DataLoader): dataloader containing the graph_dataset
+        device (str): hardware where to work on
+
+    Returns:
+        torch.tensor: tensor with shape number_of_embeddings x embedding_size 
+    """
     model.eval()
-
     with torch.no_grad():
-        for batch in valid_dataloader:
-            # to device
-            emb_l = model(batch[0].to(device))
-            emb_r = model(batch[1].to(device))
+        for batch in dataloader:
+            emb = model(batch.to(device))
+            try:
+                embeddings = torch.cat((embeddings, emb), dim=0)
+            except:
+                embeddings = emb
+    return embeddings
+    
 
-            predictions = F.cosine_similarity(emb_l, emb_r, dim=1)
+def generate_table_embeddings(model_file: str, table_dict_path: str=None, out_path: str=None, graph_dict_path: str=None, batch_size: int=128, mode: str='full', ) -> dict:
+    """Method to embed a collection of pandas dataframes contained in a dictionary
 
-            y = batch[2].to(device)
+    Args:
+        model_file (str): path to an instance of a GNNTE model
+        table_dict_path (str, optional): path to the table dictionary, not necessary if mode=='embed_graphs'. Defaults to None.
+        out_path (str, optional): path to the file where to save the embedding_file in pickle format, if None nothing is done. Defaults to None.
+        graph_dict_path (str, optional): path to the table dictionary, not necessary if mode=='full'. Defaults to None.
+        mode (str, optional): mode of operation, accepted 'full' and 'embed_graphs'. Defaults to 'full'.
+        batch_size (int, optional): size of the batch in the dataloader. Defaults to 9.
 
-            # Loss
-            loss = criterion(predictions, y)
+    Raises:
+        NotImplementedError: raised if an unsupported mode is required
 
-            avg_loss += loss.item()
-
-    avg_loss = avg_loss / len(valid_dataloader)
-
-    return avg_loss
-
-def generate_table_embeddings(model_file: str, table_dict_path: str=None, out_path: str=None, graph_dict_path: str=None, mode: str='full', save_embeddings: bool=True) -> dict:
+    Returns:
+        dict: dict containing the embeddings associated with the table-names
+    """
     if mode == 'full':
         graph_dict = generate_graph_dictionary(table_dict_path, out_path=None, save_graph_dict=False)
     elif mode == 'embed_graphs':
@@ -61,10 +86,39 @@ def generate_table_embeddings(model_file: str, table_dict_path: str=None, out_pa
     else:
         raise NotImplementedError
     model = GNNTE(model_file=model_file)
-
-    eval_loader = DataLoader(GraphTriplesDataset(tmp, graphs), 
+    gd = GraphsDataset(graph_dict)
+    dataloader = DataLoader(gd, 
                         batch_size=batch_size,  
-                        num_workers=num_workers, 
-                        shuffle=shuffle)
-
+                        num_workers=0, 
+                        shuffle=False)
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     
+    embeddings = embed(model, dataloader, device)
+
+    index_to_table = gd.keys
+    
+    embeddings_dict = {index_to_table[i]:embeddings[i] for i in range(len(index_to_table))}
+
+    if out_path:
+            f1 = open(out_path, 'wb')
+            pickle.dump(embeddings_dict, f1)
+            f1.close()
+    
+    return embeddings_dict
+
+
+
+if __name__ == "__main__":
+
+    n_params = len(sys.argv) - 1
+    expected_params = 3
+    if n_params != expected_params:
+        raise ValueError(f'Wrong number of parameters, you provided {n_params} but {expected_params} are expected. \nUsage is: {sys.argv[0]} model_file table_dict_path out_directory_path')
+    model_file = sys.argv[1]
+    table_dict_path = sys.argv[2]
+    out_directory_path = sys.argv[3]
+
+    #table_embeddings = generate_table_embeddings("/home/francesco.pugnaloni/GNNTE/testing_data/GNNTE_fasttext_1k.pth","/home/francesco.pugnaloni/GNNTE/tmp/tables.pkl",out_path='/home/francesco.pugnaloni/GNNTE/testing_data/embeddings.pkl',mode='embed_graphs', graph_dict_path='/home/francesco.pugnaloni/GNNTE/testing_data/graphs.pkl')
+    table_embeddings = generate_table_embeddings(model_file,table_dict_path,out_directory_path,mode='full')
+
+    print(f'Generated {len(table_embeddings.values())} embeddings')
