@@ -6,6 +6,7 @@ from nltk.corpus import stopwords
 import math
 from node_embeddings import *
 from typing import Union
+from math import isinf
 
 def isNaN(num):
     """
@@ -54,6 +55,8 @@ def preprocess_numbers(n: Union[float, str], operations: list=['cast_to_float', 
     """
     if 'cast_to_float' in operations:
         n = float(n)
+    if isinf(n):
+        return str(n)
     if 'discretize_strict' in operations:
         div = 10 ** get_order_of_magnitude(n)
         n = n//div*div
