@@ -274,7 +274,7 @@ class Graph:
                     token_list = preprocess_string_token(t, token_length_limit,operations=string_preprocess_operations)
 
                 elif is_float(str(t)):
-                    #Note: the string "infinity" will trigger an exception and will be skipped
+                    #Note: the strings "infinity","Infinity","Inf", and "inf" will trigger an exception and will be skipped
                     try:
                         token_list = [preprocess_numbers(t, operations=number_preprocess_operations)]
                     except:
