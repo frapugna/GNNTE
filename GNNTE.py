@@ -196,7 +196,7 @@ def load_test_training_stuff(triple_file: str, graph_file: str) -> dict:
 def train_test_pipeline(triple_file: str, graph_file: str, model_file: str, hidden_channels: int, num_layers: int,
                         ttv_ratio: set=(0.8,0.1,0.1), batch_size: int=64, lr: float=0.01, dropout: float=0, 
                         num_epochs: int=100, weight_decay: float=0, act: str='relu', log_wandb: bool=False,
-                        step_size: int=5, gamma: float=0.1, gnn_type: str='GIN', compute_bins_stats: bool=False, relu: bool=True) -> GNNTE:
+                        step_size: int=5, gamma: float=0.1, gnn_type: str='GIN', compute_bins_stats: bool=False, relu: bool=False) -> GNNTE:
     """This function performs the full train-validate-test pipeline
 
     Args:
@@ -603,7 +603,7 @@ def run_GNNTE_experiment(project_name: str, dataset: str, lr: float, batch_size:
 
 if __name__ == "__main__":
     name = 'GNNTE'
-    dataset = "/home/francesco.pugnaloni/GNNTE/wikipedia_datasets/1000_samples"
+    dataset = "/home/francesco.pugnaloni/GNNTE/Datasets/wikipedia_datasets/1000_samples"
     lr = 0.001
     batch_size = 128
     num_epochs = 2

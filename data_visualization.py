@@ -3,14 +3,17 @@ import pickle
 import pandas as pd
 from tqdm import tqdm
 
-def visualize_scatter_plot(exp_data_file: str) -> None:
+def visualize_scatter_plot(exp_data_file: str | dict) -> None:
     """visualize embedding generation time on the y axis and table area on the x axis
 
     Args:
-        exp_data_file (str): path to a file containing the data related to a "embed_all_no_paral" test
+        exp_data_file (str | dict): path to a file containing the data related to a "embed_all_no_paral" test or the dictionary containing the actual data
     """
-    with open(exp_data_file, 'rb') as f:
-        data = pickle.load(f)
+    if isinstance(exp_data_file, str):
+        with open(exp_data_file, 'rb') as f:
+            data = pickle.load(f)
+    else:
+        data = exp_data_file
 
     keys = list(data.keys())
 
@@ -53,3 +56,6 @@ def show_samples_distribution(df:pd.DataFrame, granularity:float=0.1)->dict:
         ax.annotate(str(p.get_height()), (p.get_x() + p.get_width() / 2, p.get_height()),
                     ha='center', va='bottom')
     return d
+
+if __name__ == '__main__':
+    show_samples_distribution('/home/francesco.pugnaloni/GNNTE/Datasets/train_test_val_gittables_candidate/train.csv')
