@@ -52,6 +52,8 @@ def show_samples_distribution(df:pd.DataFrame, granularity:float=0.1)->dict:
     l=[ [k,v] for k,v in d.items()]
     df_occurrencies = pd.DataFrame(l).sort_values(0)
     ax = df_occurrencies.plot(x=0, y=1, kind='bar')
+    plt.xlabel('Overlap Ratio')
+    plt.ylabel('n_samples')
     for p in ax.patches:
         ax.annotate(str(p.get_height()), (p.get_x() + p.get_width() / 2, p.get_height()),
                     ha='center', va='bottom')

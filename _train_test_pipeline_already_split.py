@@ -106,35 +106,36 @@ def run_GNNTE_experiment_split(project_name: str, train_file: str, test_file: st
         relu (bool, optional): if set to Tre a relu layer will be added at the end of the network, it will prevent negative cosine similarities between the embeddings
 
     """
-    name = f"{gnn_type}_{batch_size}_{lr}_{num_epochs}_{out_channels}_{n_layers}_{dropout}_{weight_decay}_{step_size}_{gamma}"
+    name = f"SPLIT_128_{gnn_type}_{batch_size}_{lr}_{num_epochs}_{out_channels}_{n_layers}_{dropout}_{weight_decay}_{step_size}_{gamma}"
     if relu:
         name += "_relu"
     else:
         name += "_no_relu"
-    # start a new wandb run to track this script
-    wandb.init(
-        # set the wandb project where this run will be logged
-        project=project_name,
-        name=name,
-        # track hyperparameters and run metadata
-        config={
-            "gnn_type":gnn_type,
-            "dataset": dataset,
-            "batch_size": batch_size,
-            "learning_rate": lr,
-            "num_epochs": num_epochs,
-            "out_channels": out_channels,
-            "n_layers": n_layers,
-            "dropout": dropout,
-            "step_size": step_size,
-            "gamma": gamma,
-            "relu" : relu
-        }
-    )
+    if log_wandb:
+        # start a new wandb run to track this script
+        wandb.init(
+            # set the wandb project where this run will be logged
+            project=project_name,
+            name=name,
+            # track hyperparameters and run metadata
+            config={
+                "gnn_type":gnn_type,
+                "dataset": dataset,
+                "batch_size": batch_size,
+                "learning_rate": lr,
+                "num_epochs": num_epochs,
+                "out_channels": out_channels,
+                "n_layers": n_layers,
+                "dropout": dropout,
+                "step_size": step_size,
+                "gamma": gamma,
+                "relu" : relu
+            }
+        )
     #checkpoint = dataset+f"/{name}.pth"
 
     train_test_pipeline_split(train_file=train_file, test_file=test_file, valid_file=valid_file, graph_file=graph_file, model_file=checkpoint, hidden_channels=out_channels, num_layers=n_layers, 
-                        num_epochs=num_epochs, batch_size=batch_size, lr=lr, dropout=dropout, log_wandb=True,
+                        num_epochs=num_epochs, batch_size=batch_size, lr=lr, dropout=dropout, log_wandb=log_wandb,
                         weight_decay=weight_decay, step_size=step_size, gamma=gamma, gnn_type=gnn_type, compute_bins_stats=True,
                         relu=relu)
         
@@ -145,27 +146,38 @@ if __name__ == "__main__":
     train_file = '/home/francesco.pugnaloni/GNNTE/Datasets/CoreEvaluationDatasets/1M_wikitables_disjointed/455252_52350_52530/train.csv'
     test_file = '/home/francesco.pugnaloni/GNNTE/Datasets/CoreEvaluationDatasets/1M_wikitables_disjointed/455252_52350_52530/test.csv'
     valid_file = '/home/francesco.pugnaloni/GNNTE/Datasets/CoreEvaluationDatasets/1M_wikitables_disjointed/455252_52350_52530/valid.csv'
+    #train_file = '/home/francesco.pugnaloni/GNNTE/Datasets/wikipedia_datasets/1000_samples/train.csv'
+    #test_file = '/home/francesco.pugnaloni/GNNTE/Datasets/wikipedia_datasets/1000_samples/test.csv'
+    #valid_file = '/home/francesco.pugnaloni/GNNTE/Datasets/wikipedia_datasets/1000_samples/valid.csv'
+
     graph_file = '/home/francesco.pugnaloni/GNNTE/Datasets/wikipedia_datasets/1MR/graphs.pkl'
-    checkpoint = '/home/francesco.pugnaloni/GNNTE/Datasets/CoreEvaluationDatasets/1M_wikitables_disjointed/model_455252_52350_52530.pth'
+    #graph_file = '/home/francesco.pugnaloni/GNNTE/Datasets/wikipedia_datasets/1000_samples/graphs.pkl'
+
+    
+    #checkpoint = '/home/francesco.pugnaloni/GNNTE/tmp/model_test_1k.pth'
     lr = 0.001
     batch_size = 128
     num_epochs = 100
+    #num_epochs = 10
     out_channels = 300
     n_layers = 3
     dropout_prob = 0
     weight_decay = 0.0001
-    step_size = 15
+    step_size = 45
     gamma = 0.1
-    GNN_type = 'GIN'
+    GNN_type = 'GAT'
+    checkpoint = f'/home/francesco.pugnaloni/GNNTE/Datasets/CoreEvaluationDatasets/1M_wikitables_disjointed/model_455252_52350_52530_{GNN_type}_100_ep.pth'
+    log_wandb = True
     dataset = "/home/francesco.pugnaloni/GNNTE/Datasets/wikipedia_datasets/1000_samples"
 
     graphs_path = dataset+"/graphs.pkl"
-    checkpoint = dataset+f"/{name}.pth"
+    #checkpoint = dataset+f"/{name}.pth"
     
 
     run_GNNTE_experiment_split(project_name=name, train_file=train_file, test_file=test_file, valid_file=valid_file, graph_file=graph_file, 
                                checkpoint=checkpoint, lr=lr, batch_size=batch_size, num_epochs=num_epochs, out_channels=out_channels, n_layers=n_layers, 
                                dropout=dropout_prob, weight_decay=weight_decay, step_size=step_size, gamma=gamma, gnn_type=GNN_type,
+                               log_wandb=log_wandb
                                )
 
     print('Finish')
