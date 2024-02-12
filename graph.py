@@ -43,7 +43,7 @@ def is_float(string: str) -> bool:
     except ValueError:
         return False
 
-def preprocess_numbers(n: Union[float, str], operations: list=['cast_to_float', 'discretize_strict']) -> str:
+def preprocess_numbers(n: Union[float, str], operations: list=['cast_to_float','discretize_strict']) -> str:
     """Preprocessing operations for numbers are performed
 
     Args:
@@ -186,7 +186,7 @@ class Graph:
                 token_length_limit: int=20,link_tuple_token: bool=True, link_token_attribute: bool=True, link_tuple_attribute: bool=False, 
                 attribute_preprocess_operations: list=['lowercase', 'drop_numbers_from_strings'], 
                 string_preprocess_operations: list=['lowercase', 'split', 'remove_stop_words'],
-                number_preprocess_operations: list=['cast_to_float', 'discretize_strict'], drop_na: bool=False, verbose: bool=False) -> None:
+                number_preprocess_operations: list=['cast_to_float'], drop_na: bool=False, verbose: bool=False) -> None:
         """A dataframe will be processed to generate nodes and edges to add to the graph
 
         Args:
@@ -278,8 +278,27 @@ class Graph:
                     try:
                         token_list = [preprocess_numbers(t, operations=number_preprocess_operations)]
                     except:
-                        print(f'An exception occurred in the position [{i},{j}] of the table {table_name} ')
-                        continue
+                        try:
+                            sentence = '#???$/'   
+                            try:
+                                value_index = value_to_index[sentence]
+                                self.__add_value_to_index(value_index-index_left_shift, j, row_index)
+                            except:
+                                embedding_buffer.add_random_embedding()
+                                value_index = self.__get_next_index('value')
+                                self.__add_value_to_index(values_count, j, row_index)
+                                values_count += 1
+                                value_to_index[sentence] = value_index
+
+                            if link_tuple_token:
+                                self.__add_edge(value_index, row_index)
+
+                            if link_token_attribute:
+                                self.__add_edge(value_index, column_indexes[j])
+                            continue
+                        except:
+                            print('An exception occurred')
+                            continue
                 else:
                     raise Exception(f'The token {t} is of type {type(t)} and it is not supported')
                 sentence = ' '.join(token_list)

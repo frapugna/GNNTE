@@ -126,9 +126,9 @@ class GNNTE(nn.Module):
         if self.gnn_type == 'GIN':
             self.model = GIN(self.in_channels, self.hidden_channels, self.num_layers, dropout=dropout, act=act).to(self.device)
         elif self.gnn_type == 'GAT':
-            self.model = GAT(-1, self.in_channels, self.num_layers, dropout=dropout, act=act).to(self.device)
+            self.model = GAT(self.in_channels, self.hidden_channels, self.num_layers, dropout=dropout, act=act).to(self.device)
         elif self.gnn_type == 'GraphSAGE':
-            self.model = GraphSAGE(-1, self.hidden_channels, self.num_layers, dropout=dropout, act=act).to(self.device)
+            self.model = GraphSAGE(self.in_channels, self.hidden_channels, self.num_layers, dropout=dropout, act=act).to(self.device)
         else:
             raise NotImplementedError
         if relu:
@@ -365,6 +365,8 @@ def train_epoch(model: GNNTE, train_dataloader: DataLoader, optimizer: torch.opt
 
         predictions = F.cosine_similarity(emb_l, emb_r, dim=1)
 
+        predictions[predictions < 0] = 0
+
         y = batch[2].to(device)
 
         # Loss
@@ -404,6 +406,8 @@ def eval_epoch(model: GNNTE, valid_dataloader: DataLoader, criterion: nn.MSELoss
             emb_r = model(batch[1].to(device))
 
             predictions = F.cosine_similarity(emb_l, emb_r, dim=1)
+
+            predictions[predictions < 0] = 0
 
             y = batch[2].to(device)
 
@@ -531,6 +535,9 @@ def model_inference(model: GNNTE, data_loader: DataLoader, device: str) -> set:
             emb_r = model(batch[1].to(device))
 
             logits = F.cosine_similarity(emb_l, emb_r, dim=1)
+
+            logits[logits < 0] = 0
+
             y = batch[2]
                 # Save the predictions and the labels
             if y_pred is None:
@@ -615,5 +622,5 @@ if __name__ == "__main__":
     checkpoint = dataset+f"/{name}.pth"
 
     t = train_test_pipeline(triples_path, graphs_path, checkpoint, out_channels, n_layers, 
-        num_epochs=num_epochs, batch_size=batch_size, lr=lr, dropout=dropout, gnn_type='GIN',log_wandb=False, compute_bins_stats=True)
+        num_epochs=num_epochs, batch_size=batch_size, lr=lr, dropout=dropout, gnn_type='GraphSAGE',log_wandb=False, compute_bins_stats=True)
     print('Finish')

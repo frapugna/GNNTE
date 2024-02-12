@@ -31,7 +31,7 @@ def group_samples(samples_path: str | pd.DataFrame) -> dict:
         d[k] = set(d[k])
     return d
 
-def train_test_valid_split(table_indexes, train_ratio=0.6, validation_ratio=0.2, test_ratio=0.2, seed = 42) -> set:
+def train_test_valid_split(table_indexes, train_ratio=0.8, validation_ratio=0.1, test_ratio=0.1, seed = 42) -> set:
     train, test = train_test_split(table_indexes, test_size=test_ratio, random_state=seed)
     train, valid = train_test_split(train, test_size=validation_ratio / (1 - test_ratio), random_state=seed)
     return set(train), set(test), set(valid)

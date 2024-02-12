@@ -53,7 +53,7 @@ def generate_graph_dictionary(table_dict_path: str, out_path: str, embedding_gen
     print('Graph generation ends')
     if save_graph_dict:
         print('Saving output')
-        with open(out_path+'/graphs.pkl', 'wb') as f:
+        with open(out_path, 'wb') as f:
             pickle.dump(out, f)   
         print('Output saved')
     end = time.time()
@@ -65,10 +65,14 @@ if __name__ == "__main__":
 
     n_params = len(sys.argv) - 1
     expected_params = 3
-    if n_params != expected_params:
-        raise ValueError(f'Wrong number of parameters, you provided {n_params} but {expected_params} are expected. \nUsage is: {sys.argv[0]} table_dict_path out_directory_path embedding_generation_method')
-    table_dict_path = sys.argv[1]
-    out_directory_path = sys.argv[2]
-    embedding_generation_method = sys.argv[3]
+    # if n_params != expected_params:
+    #     raise ValueError(f'Wrong number of parameters, you provided {n_params} but {expected_params} are expected. \nUsage is: {sys.argv[0]} table_dict_path out_directory_path embedding_generation_method')
+    # table_dict_path = sys.argv[1]
+    # out_directory_path = sys.argv[2]
+    # embedding_generation_method = sys.argv[3]
+
+    table_dict_path = '/home/francesco.pugnaloni/GNNTE/Datasets/wikipedia_datasets/1MR/full_table_dict_with_id.pkl'
+    out_directory_path = '/home/francesco.pugnaloni/GNNTE/Datasets/wikipedia_datasets/1MR/graphs.pkl'
+    embedding_generation_method = 'fasttext'
 
     graph_dict = generate_graph_dictionary(table_dict_path, out_directory_path, embedding_generation_method)

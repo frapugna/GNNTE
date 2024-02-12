@@ -6,6 +6,12 @@ from graph import get_order_of_magnitude
 
 class collection_explorer:
     def __init__(self, key_list: list, embedding_dictionary: dict) -> None:
+        """Init method
+
+        Args:
+            key_list (list): list of the identifiers of the elements in the set
+            embedding_dictionary (dict): dictionary containing the keys and the associated embeddings
+        """
         self.key_list = key_list
         self.embedding_dictionary = embedding_dictionary
         self.starting_i = 0
@@ -15,6 +21,14 @@ class collection_explorer:
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     
     def __call__(self) -> set:
+        """Method to obtain a couple from the collection explorer
+
+        Raises:
+            StopIteration: thrown when all of the possible couples are explored
+
+        Returns:
+            set: couple of keys and their rpedicted overlap ratio
+        """
         try:
             left = self.key_list[self.i]
             right = self.key_list[self.j]
@@ -40,6 +54,14 @@ class collection_explorer:
 
 
 def save_checkpoint(outdir: str, train_triples: list, test_triples: list, valid_triples: list) -> None:
+    """Save a checkpoint of the train/test/val dataset generated so far
+
+    Args:
+        outdir (str): directory where to save the outputs
+        train_triples (list): dataframe containing the training data
+        test_triples (list): dataframe containing the testing data
+        valid_triples (list): dataframe containing the validation data
+    """
     train = list(chain.from_iterable(train_triples))
     test = list(chain.from_iterable(test_triples))
     valid = list(chain.from_iterable(valid_triples))
@@ -51,11 +73,31 @@ def save_checkpoint(outdir: str, train_triples: list, test_triples: list, valid_
     pd.DataFrame(valid, columns=columns).to_csv(outdir+'/valid.csv', index=False)
 
 def get_bucket(n: float) -> int:
+    """return the bucket which a sample belong to
+
+    Args:
+        n (float): number to put into a bucket
+
+    Returns:
+        int: the bucket 
+    """
     return int(n*100//10)
 
 def generate_triples(embedding_dictionary: str | dict, out_dir: str, train_ratio: float=0.6, 
                      validation_ratio: float=0.2, test_ratio: float=0.2, train_target: int=800000, 
                      test_target: int=100, valid_target: int=100000) -> None:
+    """method to generate the candidate train/test/val datasets
+
+    Args:
+        embedding_dictionary (str | dict): dictionary containing the embeddings of the tables
+        out_dir (str): directory where to save the generated datasets
+        train_ratio (float, optional): percentage of tables to put into training set. Defaults to 0.6.
+        validation_ratio (float, optional): percentage of tables to put into validation set. Defaults to 0.2.
+        test_ratio (float, optional): percentage of tables to put into test set. Defaults to 0.2.
+        train_target (int, optional): n of triples desired for the training dataset. Defaults to 800000.
+        test_target (int, optional): n of triples desired for the testing dataset. Defaults to 100.
+        valid_target (int, optional): n of triples desired for the validation dataset. Defaults to 100000.
+    """
     if isinstance(embedding_dictionary, str):
         with open(embedding_dictionary, 'rb') as f:
             embedding_dictionary = pickle.load(f)

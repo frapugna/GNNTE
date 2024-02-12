@@ -194,6 +194,9 @@ if __name__ == "__main__":
     # table_dict_path = sys.argv[2]
     # out_directory_path = sys.argv[3]
 
-    results = run_experiment(model_file="/home/francesco.pugnaloni/GNNTE/models/GNNTE_1M_thesis.pth" ,table_dict_path="/home/francesco.pugnaloni/GNNTE/Datasets/CoreEvaluationDatasets/100k_valid_wikitables/100k_tables.pkl",
-                             triple_dataset_file='/home/francesco.pugnaloni/GNNTE/Datasets/CoreEvaluationDatasets/100k_valid_wikitables/100k_samples.csv')
+    results = run_experiment(model_file="/home/francesco.pugnaloni/GNNTE/Datasets/CoreEvaluationDatasets/1M_wikitables_disjointed/models/model_450k_GraphSAGE_best_15_0.1.pth" ,
+                             #table_dict_path="/home/francesco.pugnaloni/GNNTE/Datasets/CoreEvaluationDatasets/1M_wikitables_disjointed/table_dict_full.pkl",
+                             triple_dataset_file='/home/francesco.pugnaloni/GNNTE/Datasets/CoreEvaluationDatasets/1M_wikitables_disjointed/455252_52350_52530/test.csv',
+                             graph_dict_path='/home/francesco.pugnaloni/GNNTE/Datasets/wikipedia_datasets/1MR/graphs.pkl'
+                             )
     

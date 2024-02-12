@@ -118,7 +118,17 @@ class FasttextEmbeddingBuffer(Embedding_buffer):
         except TypeError:
             self.embeddings = vector.unsqueeze(0)
         self.n_embeddings += 1
-    
+
+    def add_random_embedding(self) -> None:
+        """Method to manage the nan values
+        """
+        vector = torch.rand(self.vector_size)
+        try:
+            self.embeddings = torch.cat((self.embeddings, vector.unsqueeze(0)), dim=0)
+        except TypeError:
+            self.embeddings = vector.unsqueeze(0)
+        self.n_embeddings += 1
+
     def __get_embedding(self, word: str) -> torch.Tensor:
         """Provide the embedding of a word
 

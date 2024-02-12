@@ -106,7 +106,8 @@ def run_GNNTE_experiment_split(project_name: str, train_file: str, test_file: st
         relu (bool, optional): if set to Tre a relu layer will be added at the end of the network, it will prevent negative cosine similarities between the embeddings
 
     """
-    name = f"SPLIT_128_{gnn_type}_{batch_size}_{lr}_{num_epochs}_{out_channels}_{n_layers}_{dropout}_{weight_decay}_{step_size}_{gamma}"
+    #name = f"SPLIT_128_{gnn_type}_{batch_size}_{lr}_{num_epochs}_{out_channels}_{n_layers}_{dropout}_{weight_decay}_{step_size}_{gamma}"
+    name = checkpoint
     if relu:
         name += "_relu"
     else:
@@ -120,7 +121,7 @@ def run_GNNTE_experiment_split(project_name: str, train_file: str, test_file: st
             # track hyperparameters and run metadata
             config={
                 "gnn_type":gnn_type,
-                "dataset": dataset,
+                #"dataset": dataset,
                 "batch_size": batch_size,
                 "learning_rate": lr,
                 "num_epochs": num_epochs,
@@ -143,34 +144,34 @@ def run_GNNTE_experiment_split(project_name: str, train_file: str, test_file: st
 
 if __name__ == "__main__":
     name = 'GNNTE'
-    train_file = '/home/francesco.pugnaloni/GNNTE/Datasets/CoreEvaluationDatasets/1M_wikitables_disjointed/455252_52350_52530/train.csv'
-    test_file = '/home/francesco.pugnaloni/GNNTE/Datasets/CoreEvaluationDatasets/1M_wikitables_disjointed/455252_52350_52530/test.csv'
-    valid_file = '/home/francesco.pugnaloni/GNNTE/Datasets/CoreEvaluationDatasets/1M_wikitables_disjointed/455252_52350_52530/valid.csv'
+    train_file = '/home/francesco.pugnaloni/GNNTE/Datasets/CoreEvaluationDatasets/1M_wikitables_disjointed/819716_13583_12918/train.csv'
+    test_file = '/home/francesco.pugnaloni/GNNTE/Datasets/CoreEvaluationDatasets/1M_wikitables_disjointed/819716_13583_12918/test.csv'
+    valid_file = '/home/francesco.pugnaloni/GNNTE/Datasets/CoreEvaluationDatasets/1M_wikitables_disjointed/819716_13583_12918/valid.csv'
     #train_file = '/home/francesco.pugnaloni/GNNTE/Datasets/wikipedia_datasets/1000_samples/train.csv'
     #test_file = '/home/francesco.pugnaloni/GNNTE/Datasets/wikipedia_datasets/1000_samples/test.csv'
     #valid_file = '/home/francesco.pugnaloni/GNNTE/Datasets/wikipedia_datasets/1000_samples/valid.csv'
 
-    graph_file = '/home/francesco.pugnaloni/GNNTE/Datasets/wikipedia_datasets/1MR/graphs.pkl'
+    graph_file = '/home/francesco.pugnaloni/GNNTE/Datasets/wikipedia_datasets/1MR/graphs_no_numbers_discretized.pkl'
     #graph_file = '/home/francesco.pugnaloni/GNNTE/Datasets/wikipedia_datasets/1000_samples/graphs.pkl'
 
     
     #checkpoint = '/home/francesco.pugnaloni/GNNTE/tmp/model_test_1k.pth'
     lr = 0.001
     batch_size = 128
-    num_epochs = 100
+    num_epochs = 50
     #num_epochs = 10
     out_channels = 300
     n_layers = 3
     dropout_prob = 0
     weight_decay = 0.0001
-    step_size = 45
+    step_size = 15
     gamma = 0.1
-    GNN_type = 'GAT'
-    checkpoint = f'/home/francesco.pugnaloni/GNNTE/Datasets/CoreEvaluationDatasets/1M_wikitables_disjointed/model_455252_52350_52530_{GNN_type}_100_ep.pth'
+    GNN_type = 'GIN'
+    checkpoint = f'/home/francesco.pugnaloni/GNNTE/Datasets/CoreEvaluationDatasets/1M_wikitables_disjointed/model_455252_52350_52530_{GNN_type}_50_ep_no_discr_800k.pth'
     log_wandb = True
-    dataset = "/home/francesco.pugnaloni/GNNTE/Datasets/wikipedia_datasets/1000_samples"
+    #dataset = "/home/francesco.pugnaloni/GNNTE/Datasets/wikipedia_datasets/1000_samples"
 
-    graphs_path = dataset+"/graphs.pkl"
+    #graphs_path = dataset+"/graphs.pkl"
     #checkpoint = dataset+f"/{name}.pth"
     
 
