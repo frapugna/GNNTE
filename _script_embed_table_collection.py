@@ -61,7 +61,7 @@ def embed(model: GNNTE, dataloader: DataLoader, device: str) -> tuple:
     return embeddings
     
 
-def generate_table_embeddings(model_file: str, table_dict_path: str=None, out_path: str=None, graph_dict_path: str=None, batch_size: int=128, mode: str='full', ) -> dict:
+def generate_table_embeddings(model_file: str, table_dict_path: str=None, out_path: str=None, graph_dict_path: str=None, batch_size: int=1, mode: str='embed_graphs', ) -> dict:
     """Method to embed a collection of pandas dataframes contained in a dictionary
 
     Args:
@@ -99,26 +99,29 @@ def generate_table_embeddings(model_file: str, table_dict_path: str=None, out_pa
     
     embeddings_dict = {index_to_table[i]:embeddings[i] for i in range(len(index_to_table))}
 
-    if out_path:
-            f1 = open(out_path, 'wb')
-            pickle.dump(embeddings_dict, f1)
-            f1.close()
-    
+    with open(out_path, 'wb') as f:
+        pickle.dump(embeddings_dict, f)
+
     return embeddings_dict
 
 
 
 if __name__ == "__main__":
 
-    n_params = len(sys.argv) - 1
-    expected_params = 3
-    if n_params != expected_params:
-        raise ValueError(f'Wrong number of parameters, you provided {n_params} but {expected_params} are expected. \nUsage is: {sys.argv[0]} model_file table_dict_path out_directory_path')
-    model_file = sys.argv[1]
-    table_dict_path = sys.argv[2]
-    out_directory_path = sys.argv[3]
+    # n_params = len(sys.argv) - 1
+    # expected_params = 3
+    # if n_params != expected_params:
+    #     raise ValueError(f'Wrong number of parameters, you provided {n_params} but {expected_params} are expected. \nUsage is: {sys.argv[0]} model_file table_dict_path out_directory_path')
+    # model_file = sys.argv[1]
+    # table_dict_path = sys.argv[2]
+    # out_directory_path = sys.argv[3]
 
     #table_embeddings = generate_table_embeddings("/home/francesco.pugnaloni/GNNTE/testing_data/GNNTE_fasttext_1k.pth","/home/francesco.pugnaloni/GNNTE/tmp/tables.pkl",out_path='/home/francesco.pugnaloni/GNNTE/testing_data/embeddings.pkl',mode='embed_graphs', graph_dict_path='/home/francesco.pugnaloni/GNNTE/testing_data/graphs.pkl')
-    table_embeddings = generate_table_embeddings(model_file,table_dict_path,out_directory_path,mode='full')
+    table_embeddings = generate_table_embeddings(
+                                    model_file='/home/francesco.pugnaloni/GNNTE/models/GNNTE_1M_thesis.pth',
+                                    graph_dict_path='/home/francesco.pugnaloni/GNNTE/Datasets/wikipedia_datasets/1MR/graphs.pkl',
+                                    out_path='/home/francesco.pugnaloni/GNNTE/Datasets/wikipedia_datasets/1MR/embeddings_full_wikidata_GNNTE_1M_thesis.pkl',
+                                    mode='embed_graphs'
+                                    )
 
     print(f'Generated {len(table_embeddings.values())} embeddings')

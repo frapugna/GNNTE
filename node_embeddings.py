@@ -5,7 +5,7 @@ import gensim.downloader as api
 
 class Embedding_buffer(ABC):
     @abstractmethod
-    def __call__(self, sentence: str) -> NotImplemented:
+    def __call__(self, sentence: str) -> NotImplemented: # type: ignore
         """Adds a sentence to the buffer of sentences to embed
 
         Args:
@@ -17,7 +17,7 @@ class Embedding_buffer(ABC):
         return NotImplemented
     
     @abstractmethod
-    def pop_embeddings(self) -> NotImplemented:
+    def pop_embeddings(self) -> NotImplemented: # type: ignore
         """The buffer is emptied and the embeddings inside it returned
 
         Returns:
@@ -26,7 +26,7 @@ class Embedding_buffer(ABC):
         return NotImplemented
     
     @abstractmethod
-    def add_nan_embedding(self) -> NotImplemented:
+    def add_nan_embedding(self) -> NotImplemented: # type: ignore
         """Special method to manage nan sentences
 
         Returns:

@@ -151,7 +151,7 @@ if __name__ == "__main__":
     #test_file = '/home/francesco.pugnaloni/GNNTE/Datasets/wikipedia_datasets/1000_samples/test.csv'
     #valid_file = '/home/francesco.pugnaloni/GNNTE/Datasets/wikipedia_datasets/1000_samples/valid.csv'
 
-    graph_file = '/home/francesco.pugnaloni/GNNTE/Datasets/wikipedia_datasets/1MR/graphs_no_numbers_discretized.pkl'
+    graph_file = '/home/francesco.pugnaloni/GNNTE/Datasets/wikipedia_datasets/1MR/graphs.pkl'
     #graph_file = '/home/francesco.pugnaloni/GNNTE/Datasets/wikipedia_datasets/1000_samples/graphs.pkl'
 
     
@@ -166,8 +166,8 @@ if __name__ == "__main__":
     weight_decay = 0.0001
     step_size = 15
     gamma = 0.1
-    GNN_type = 'GIN'
-    checkpoint = f'/home/francesco.pugnaloni/GNNTE/Datasets/CoreEvaluationDatasets/1M_wikitables_disjointed/model_455252_52350_52530_{GNN_type}_50_ep_no_discr_800k.pth'
+    GNN_type = 'GraphSAGE'
+    checkpoint = f'/home/francesco.pugnaloni/GNNTE/Datasets/CoreEvaluationDatasets/1M_wikitables_disjointed/models/12_02_23_model_850k_{GNN_type}_50_ep_dicr_800k.pth'
     log_wandb = True
     #dataset = "/home/francesco.pugnaloni/GNNTE/Datasets/wikipedia_datasets/1000_samples"
 

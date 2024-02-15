@@ -73,7 +73,7 @@ def update_table_dict(table_dict: dict, experiment_data: dict) -> dict:
                 outliers[k] = table_dict[k]
     return outliers
 
-def run_experiment(model_file: str, table_dict_path: str | dict, experiment_data_file_path: str=None, iters: int=5, embedding_file: str=None) -> dict:
+def run_experiment(model_file: str, table_dict_path: str | dict, experiment_data_file_path: str=None, iters: int=1, embedding_file: str=None) -> dict:
     print('Loading table_dict....')
     if type(table_dict_path) is dict:
         table_dict = table_dict_path
@@ -106,10 +106,13 @@ def run_experiment(model_file: str, table_dict_path: str | dict, experiment_data
             pickle.dump(experiment_data,f)
 
 if __name__ == '__main__':
-    run_experiment(model_file='/home/francesco.pugnaloni/GNNTE/models/GNNTE_1M_thesis.pth', 
+    run_experiment(
+        #model_file='/home/francesco.pugnaloni/GNNTE/models/model_wikidata_450k_GraphSAGE_50ep.pth', 
+        
+        model_file='/home/francesco.pugnaloni/GNNTE/models/wikidata/model_wikidata_450k_GraphSAGE_50ep.pth', 
         #table_dict_path='/home/francesco.pugnaloni/GNNTE/Datasets/just_1k_tables.pkl',
-        table_dict_path='/home/francesco.pugnaloni/GNNTE/Datasets/CoreEvaluationDatasets/git_wiki_joined/git_wiki_joined.pkl',
+        table_dict_path='/home/francesco.pugnaloni/GNNTE/Datasets/2_WikiTables/full_table_dict_with_id.pkl',
         #experiment_data_file_path="/home/francesco.pugnaloni/GNNTE/Datasets/just_1k_tables_stats.pkl",
-        experiment_data_file_path="/home/francesco.pugnaloni/GNNTE/run_data/gen_emb_seq/emb_speed_git_wiki_full_optimezed_5_iters.pkl",
-        embedding_file = '/home/francesco.pugnaloni/GNNTE/Datasets/CoreEvaluationDatasets/git_wiki_joined/embeddings_1M_git_wiki.pkl'
+        experiment_data_file_path="/home/francesco.pugnaloni/GNNTE/test_data/tmp/tmp.pkl",
+        embedding_file = '/home/francesco.pugnaloni/GNNTE/Datasets/2_WikiTables/embeddings/emb_wikifull_450k_15-02.pkl'
     )
