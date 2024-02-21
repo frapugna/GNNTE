@@ -55,8 +55,8 @@ def re_evaluate_sloth_out(cleaned_sloth_output: str | pd.DataFrame, embedding_di
     return df_out
 
 if __name__ == '__main__':
-    clean_sloth('/home/francesco.pugnaloni/GNNTE/Datasets/1_Gittables/labelled/old_data/test_stats.csv','/home/francesco.pugnaloni/GNNTE/Datasets/1_Gittables/labelled/old_data/test_stats_cleaned.csv')
-    # re_evaluate_sloth_out(cleaned_sloth_output='/home/francesco.pugnaloni/GNNTE/Datasets/CoreEvaluationDatasets/gittables_labelled_no_rep_train_test/train_stats_cleaned.csv',
-    #                       embedding_dict='/home/francesco.pugnaloni/GNNTE/Datasets/gittables_datasets/embeddings_gittables_model_wikidata_450k_GraphSAGE_50ep.pkl',
-    #                       out_path='/home/francesco.pugnaloni/GNNTE/Datasets/CoreEvaluationDatasets/gittables_labelled_no_rep_train_test/results/train_with_predicted_and_AE_wiki_450k.csv'
-    #                       )
+    #clean_sloth('/home/francesco.pugnaloni/GNNTE/Datasets/1_Gittables/labelled/old_data/valid_stats.csv','/home/francesco.pugnaloni/GNNTE/Datasets/1_Gittables/labelled/old_data/valid_stats_cleaned.csv')
+    re_evaluate_sloth_out(cleaned_sloth_output='/home/francesco.pugnaloni/GNNTE/Datasets/1_Gittables/labelled/old_data/valid_stats_cleaned.csv',
+                          embedding_dict='/home/francesco.pugnaloni/GNNTE/Datasets/1_Gittables/embeddings/embeddings_gittables_model_wikidata_450k_GraphSAGE_50ep.pkl',
+                          out_path='/home/francesco.pugnaloni/GNNTE/Datasets/1_Gittables/labelled/old_data/valid_stats_cleaned_450k_with_AE.csv'
+                          )
