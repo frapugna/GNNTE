@@ -258,37 +258,66 @@ def visualize_area_scatter_plot(stats_file: str | pd.DataFrame, label_x: str='to
     areas = list(data[label_x])
     t_execs = list(data[label_y])
 
-    plt.scatter(areas, t_execs, s=3, c='orange', alpha=0.7, edgecolors='black')
+    x = areas
+    y = t_execs
+
+    # Definisci la figura e gli assi per lo scatterplot
+    fig, (ax_scatter, ax_kde) = plt.subplots(2, 1, figsize=(8, 8), 
+                                            gridspec_kw={'height_ratios': [3, 1]})
+
+    # Disegna lo scatterplot
+    ax_scatter.scatter(x, y, s=3, c='orange', alpha=0.7, edgecolors='black')
+
+    if limit_y:
+        ax_scatter.set_ylim(y_limit_low, y_limit_up)
+    if limit_x:
+        ax_scatter.set_xlim(right=x_limit_right)
+        ax_kde.set_xlim(right=x_limit_right)
 
     if plot_bisector:
         # Calcola i limiti dell'asse x e y
-        x_min, x_max = plt.xlim()
-        y_min, y_max = plt.ylim()
+        x_min, x_max = ax_scatter.get_xlim()
+        y_min, y_max = ax_scatter.get_ylim()
 
         # Calcola la pendenza e l'intercetta della bisettrice
         slope = 1
         intercept = 0
 
         # Disegna la bisettrice
-        plt.plot([x_min, x_max], [slope * x_min + intercept, slope * x_max + intercept], color='grey', linestyle='--')
-    if limit_y:
-        plt.ylim(y_limit_low, y_limit_up)
-    if limit_x:
-        plt.xlim(right=x_limit_right)
+        ax_scatter.plot([x_min, x_max], [slope * x_min + intercept, slope * x_max + intercept], color='grey', linestyle='--')
 
-    #plt.title('Embedding generation time with increasing table areas')
+    sns.histplot(
+        data=x, ax=ax_kde,
+        label='KDE',
+        fill=True, common_norm=False,
+        alpha=.5, linewidth=0, color='grey'
+    )
+
+    
+
+    # Imposta i titoli e le etichette degli assi per lo scatterplot
+
+    ax_scatter.set_ylabel(label_y)
     if label_x == 'tot_area':
-        plt.xlabel('Table Area')
+        ax_kde.set_xlabel('Table Area')
     elif label_x == 'AE':
-        plt.xlabel('Overlap Ratio AE')
+        ax_kde.set_xlabel('Overlap Ratio AE')
     else:
-        plt.xlabel(label_x)
-    plt.ylabel(label_y)
-    plt.grid(True)
+        ax_kde.set_xlabel(label_x)
+    
     if logx:
-        plt.xscale('log')
+        ax_kde.set_xscale('log')    
+        ax_scatter.set_xscale('log')
     if logy:
-        plt.yscale('log')
+        ax_scatter.set_yscale('log')
+    ax_kde.set_yscale('log')
+    
+    # Imposta le etichette degli assi per il KDE plot
+    ax_kde.set_xlabel(label_x)
+    ax_kde.set_ylabel('Number Of Samples')
+
+    # Visualizza il grafico
+    plt.tight_layout()
     plt.show()
 
 

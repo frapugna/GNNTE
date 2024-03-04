@@ -3,12 +3,20 @@ import numpy as np
 from tqdm import tqdm
 import pickle
 import torch.nn.functional as F
+from _script_embed_compare_triple_dataset import *
+import matplotlib.pyplot as plt
 
-def clean_sloth(path: str, outpath: str) -> None:
-    df = pd.read_csv(path)
-    out = df[['r_id', 's_id', 'a%']]
+def clean_sloth(path: str | pd.DataFrame, outpath: str=None) -> pd.DataFrame:
+    if isinstance(path, str):
+        df = pd.read_csv(path)
+    else:
+        df = path
+    #out = df[['r_id', 's_id', 'a%']]
+    out = df.drop(df.columns[0], axis=1)
     out = out.fillna(0)
-    out.to_csv(outpath, index=False)
+    if outpath:
+        out.to_csv(outpath, index=False)
+    return out
 
 def re_evaluate_sloth_out(cleaned_sloth_output: str | pd.DataFrame, embedding_dict: str | dict, out_path: str) -> pd.DataFrame:
     print('Loading outputs')
@@ -54,9 +62,183 @@ def re_evaluate_sloth_out(cleaned_sloth_output: str | pd.DataFrame, embedding_di
     
     return df_out
 
+def compute_overlap_ratio(model: GNNTE, dataloader: DataLoader, device: str) -> tuple:
+    model.eval()
+    with torch.no_grad():
+        for batch in dataloader:
+            emb = model(batch.to(device))
+            try:
+                embeddings = torch.cat((embeddings, emb), dim=0)
+            except:
+                embeddings = emb
+    return embeddings
+
+def build_graphs(t1: pd.DataFrame, k1: str, t2: pd.DataFrame, k2: str, embedding_buffer: Embedding_buffer, string_token_preprocessor: String_token_preprocessor) -> tuple:
+    g1 = Graph(t1, k1, embedding_buffer, string_token_preprocessor, token_length_limit=20)
+    g2 = Graph(t2, k2, embedding_buffer, string_token_preprocessor, token_length_limit=20)
+    return g1, g2
+
+def add_areas_cols_rows(sloth_outputs_file: pd.DataFrame | str, table_dict: dict | str, output_file: str=None) -> pd.DataFrame:
+
+    if isinstance(sloth_outputs_file, str):
+        sloth_outputs_file = pd.read_csv(sloth_outputs_file)
+    
+    if isinstance(table_dict, str):
+        with open(table_dict, 'rb') as f:
+            table_dict = pickle.load(f)
+
+    new_cols = {
+        'r_rows':[],
+        'r_cols':[],
+        'r_area':[],
+        's_rows':[],
+        's_cols':[],
+        's_area':[],
+        'tot_rows':[],
+        'tot_cols':[],
+        'tot_area':[]
+    }
+
+    for r in tqdm(range(sloth_outputs_file.shape[0])):
+        r_table = table_dict[sloth_outputs_file.iloc[r]['r_id']]
+        s_table = table_dict[sloth_outputs_file.iloc[r]['s_id']]
+
+        r_rows = r_table.shape[0]
+        r_cols = r_table.shape[1]
+        r_area = r_rows*r_cols
+
+        s_rows = s_table.shape[0]
+        s_cols = s_table.shape[1]
+        s_area = s_rows*s_cols
+
+        tot_rows = r_rows + s_rows
+        tot_cols = r_cols + s_cols
+        tot_area = r_area + s_area
+
+        new_cols['r_rows'].append(r_rows)
+        new_cols['r_cols'].append(r_cols)
+        new_cols['r_area'].append(r_area)
+
+        new_cols['s_rows'].append(s_rows)
+        new_cols['s_cols'].append(s_cols)
+        new_cols['s_area'].append(s_area)
+
+        new_cols['tot_rows'].append(tot_rows)
+        new_cols['tot_cols'].append(tot_cols)
+        new_cols['tot_area'].append(tot_area)
+    
+    new_cols = pd.DataFrame(new_cols)
+
+    out = pd.concat([sloth_outputs_file, new_cols], axis=1)
+
+    if output_file:
+        out.to_csv(output_file, index=False)
+
+    return out
+    
+
+
+def recompute_embeddings_overlaps_overlap_computation_time(sloth_outputs_file: str, model_file: str, table_dict: dict, output_file: str=None) -> pd.DataFrame:
+    """_summary_
+
+    Args:
+        sloth_outputs_file (str): file containing the outputs of a sloth run
+        model_file (str): path to a trained armadillo model
+        table_dict (dict): path to a dictionary containing the tables
+        output_file (str, optional): file where to save the enriched dataframe. Defaults to None.
+
+    Returns:
+        pd.DataFrame: an erchied dataframe with armadillo execution times
+    """
+    sloth_data = pd.read_csv(sloth_outputs_file)
+    
+    print('Loading table dict....')
+    with open(table_dict, 'rb') as f:
+            table_dict = pickle.load(f)
+    print('Table dict loaded')
+
+    print('Loading model....')
+    model = GNNTE(model_file=model_file)
+    print('Model loaded')
+
+    print('Loading embedding_buffer....')
+    embedding_buffer = FasttextEmbeddingBuffer(model='fasttext-wiki-news-subwords-300')
+    print('embedding_buffer loaded....')
+
+    print('Loading string_token_preprocessor....')
+    string_token_preprocessor = String_token_preprocessor()
+    print('string_token_preprocessor loaded')
+
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+    exec_times = {
+        'graphs_generation':[],
+        'embeddings_generation':[],
+        'overlap_computation':[],
+        'total':[],
+        'predicted_overlap':[]        
+    }
+
+    for r in tqdm(range(sloth_data.shape[0])):
+        start = time.time()
+        
+        #Graphs construction
+        start_g = time.time()
+        k1 = sloth_data.iloc[r]['r_id']
+        k2 = sloth_data.iloc[r]['s_id']
+        t1 = table_dict[k1]
+        t2 = table_dict[k2]
+        g_r, g_s = build_graphs(t1, k1,t2,k2,embedding_buffer,string_token_preprocessor)
+        g = {k1:g_r, k2:g_s}
+        end_g = time.time()
+        exec_times['graphs_generation'].append(end_g-start_g)
+
+        #Embeddings generation
+        start_e = time.time()
+        gd = GraphsDataset(g)
+        dataloader = DataLoader(gd, batch_size=2, num_workers=0, shuffle=False)
+        embeddings = embed(model, dataloader, device)
+        end_e = time.time()
+        exec_times['embeddings_generation'].append(end_e-start_e)
+
+        #Overlap ratio computation
+        start_o = time.time()
+        overlap = max(float(0), F.cosine_similarity(embeddings[0], embeddings[1], dim=0))
+        end_o = time.time()
+        exec_times['overlap_computation'].append(end_o-start_o)
+
+        end = time.time()
+        exec_times['total'].append(end-start)
+        
+        try:
+            exec_times['predicted_overlap'].append(overlap.cpu())
+        except:
+            exec_times['predicted_overlap'].append(overlap)
+    
+    new_cols = pd.DataFrame(exec_times)
+
+    out = pd.concat([sloth_data, new_cols], axis=1)
+
+    if output_file:
+        out.to_csv(output_file, index=False)
+
+    return out
+
 if __name__ == '__main__':
     #clean_sloth('/home/francesco.pugnaloni/GNNTE/Datasets/1_Gittables/labelled/old_data/valid_stats.csv','/home/francesco.pugnaloni/GNNTE/Datasets/1_Gittables/labelled/old_data/valid_stats_cleaned.csv')
-    re_evaluate_sloth_out(cleaned_sloth_output='/home/francesco.pugnaloni/GNNTE/Datasets/1_Gittables/labelled/old_data/valid_stats_cleaned.csv',
-                          embedding_dict='/home/francesco.pugnaloni/GNNTE/Datasets/1_Gittables/embeddings/embeddings_gittables_model_wikidata_450k_GraphSAGE_50ep.pkl',
-                          out_path='/home/francesco.pugnaloni/GNNTE/Datasets/1_Gittables/labelled/old_data/valid_stats_cleaned_450k_with_AE.csv'
-                          )
+    
+    # re_evaluate_sloth_out(cleaned_sloth_output='/home/francesco.pugnaloni/GNNTE/Datasets/1_Gittables/labelled/old_data/valid_stats_cleaned.csv',
+    #                       embedding_dict='/home/francesco.pugnaloni/GNNTE/Datasets/1_Gittables/embeddings/embeddings_gittables_model_wikidata_450k_GraphSAGE_50ep.pkl',
+    #                       out_path='/home/francesco.pugnaloni/GNNTE/Datasets/1_Gittables/labelled/old_data/valid_stats_cleaned_450k_with_AE.csv'
+    #                       )
+    # recompute_embeddings_overlaps_overlap_computation_time(
+    #     sloth_outputs_file= '/home/francesco.pugnaloni/GNNTE/Datasets/1_Gittables/labelled/Test_data_Gittables/test_stats_200000.csv',
+    #     model_file='/home/francesco.pugnaloni/GNNTE/models/wikidata/model_wikidata_450k_GraphSAGE_50ep.pth',
+    #     table_dict='/home/francesco.pugnaloni/GNNTE/Datasets/1_Gittables/table_dict_796970_good.pkl',
+    #     output_file='/home/francesco.pugnaloni/GNNTE/test_data/t_exec/end_2_end_overlap_comparison/t_execs_compared_seconds.csv'
+    #     )
+
+    add_areas_cols_rows(sloth_outputs_file='/home/francesco.pugnaloni/GNNTE/test_data/t_exec/end_2_end_overlap_comparison/t_execs_compared_seconds.csv',
+                        table_dict='/home/francesco.pugnaloni/GNNTE/Datasets/1_Gittables/table_dict_796970_good.pkl',
+                        output_file='/home/francesco.pugnaloni/GNNTE/test_data/t_exec/end_2_end_overlap_comparison/t_execs_compared_seconds_with_areas.csv'
+                        )

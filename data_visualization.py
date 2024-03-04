@@ -3,9 +3,20 @@ import pickle
 import pandas as pd
 from tqdm import tqdm
 import numpy as np
+import seaborn as sns
 
-def plot_data_distribution(df_path: str, label: str, label_y: str='n_samples') -> None:
-    data = pd.read_csv(df_path)
+def plot_data_distribution(df_path: str | pd.DataFrame, label: str='a%', label_y: str='n_samples') -> None:
+    """Given a labelled dataset print the data distribution of its samples
+
+    Args:
+        df_path (str | pd.DataFrame): path to the labelled dataframe or the dataframe.
+        label (str, optional): label of the column to analyze. Defaults to 'a%'.
+        label_y (str, optional): label of the y axis of the chart. Defaults to 'n_samples'.
+    """
+    if isinstance(df_path, str):
+        data = pd.read_csv(df_path)
+    else:
+        data = df_path
     d = {}
     for i in range(1, 11, 1):
         i /= 10
@@ -13,6 +24,10 @@ def plot_data_distribution(df_path: str, label: str, label_y: str='n_samples') -
         t = data[data[label] >= prev]
         t = t[t[label] < i]
         d[f'{prev}_{i}'] = t.shape[0]
+    ##
+    t = data[data[label] == 1]
+    d['0.9_1.0']+=t.shape[0]
+    ## 
     keys = list(d.keys())
     values = list(d.values())
     
@@ -34,7 +49,7 @@ def plot_data_distribution(df_path: str, label: str, label_y: str='n_samples') -
     # Show the plot
     plt.show()
 
-def visualize_scatter_plot(exp_data_file: str | dict, logx: bool=True, logy: bool=False) -> None:
+def visualize_scatter_plot(exp_data_file: str | dict, logx: bool=True, logy: bool=True) -> None:
     """visualize embedding generation time on the y axis and table area on the x axis
 
     Args:
@@ -53,17 +68,41 @@ def visualize_scatter_plot(exp_data_file: str | dict, logx: bool=True, logy: boo
     areas = [data[k]['area'] for k in keys]
     t_execs = [data[k]['t_tot'] for k in keys]
 
-    plt.scatter(areas, t_execs, s=3, c='orange', alpha=0.7, edgecolors='black')
+    x = areas
+    y = t_execs
 
-    plt.title('Embedding generation time with increasing table areas')
-    plt.xlabel('Table Area')
-    plt.ylabel('Total Embedding Time (ms)')
-    plt.grid(True)
+    # Definisci la figura e gli assi per lo scatterplot
+    fig, (ax_scatter, ax_kde) = plt.subplots(2, 1, figsize=(8, 8), 
+                                            gridspec_kw={'height_ratios': [3, 1]})
+
+    # Disegna lo scatterplot
+    ax_scatter.scatter(x, y, s=3, c='orange', alpha=0.7, edgecolors='black')
+
+    sns.histplot(
+    data=x, ax=ax_kde,
+    label='KDE',
+    fill=True, common_norm=False,
+    alpha=.5, linewidth=0, color='grey'
+    )
+    # Imposta i titoli e le etichette degli assi per lo scatterplot
+    #ax_scatter.set_title('Embedding generation time with increasing table areas')
+    ax_scatter.set_ylabel('Total Embedding Time (ms)')
+    
     if logx:
-        plt.xscale('log')
+        ax_kde.set_xscale('log')    
+        ax_scatter.set_xscale('log')
     if logy:
-        plt.yscale('log')
+        ax_scatter.set_yscale('log')
+    ax_kde.set_yscale('log')
+    
+    # Imposta le etichette degli assi per il KDE plot
+    ax_kde.set_xlabel('Table Area')
+    ax_kde.set_ylabel('Number Of Samples')
+
+    # Visualizza il grafico
+    plt.tight_layout()
     plt.show()
+
 
 def plot_dict(d: dict, xlabel: str, ylabel: str) -> None:
     l=[ [k,v] for k,v in d.items()]
@@ -121,5 +160,7 @@ def show_samples_distribution(df:pd.DataFrame, granularity:float=0.1, index: int
     return d
 
 if __name__ == '__main__':
-    git_train = pd.read_csv('/home/francesco.pugnaloni/GNNTE/Datasets/2_WikiTables/1M_wikitables_disjointed/455252_52350_52530/test.csv')
-    show_samples_distribution(git_train)
+    # git_train = pd.read_csv('/home/francesco.pugnaloni/GNNTE/Datasets/2_WikiTables/1M_wikitables_disjointed/455252_52350_52530/test.csv')
+    # show_samples_distribution(git_train)
+    dd = pd.read_csv('/home/francesco.pugnaloni/GNNTE/Datasets/1_Gittables/labelled/Training_data_Gittables/train_raw.csv')
+    plot_data_distribution(dd, 'a%')
