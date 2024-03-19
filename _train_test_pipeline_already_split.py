@@ -144,14 +144,17 @@ def run_GNNTE_experiment_split(project_name: str, train_file: str, test_file: st
 
 if __name__ == "__main__":
     name = 'GNNTE'
-    train_file = '/home/francesco.pugnaloni/GNNTE/Datasets/CoreEvaluationDatasets/1M_wikitables_disjointed/819716_13583_12918/train.csv'
-    test_file = '/home/francesco.pugnaloni/GNNTE/Datasets/CoreEvaluationDatasets/1M_wikitables_disjointed/819716_13583_12918/test.csv'
-    valid_file = '/home/francesco.pugnaloni/GNNTE/Datasets/CoreEvaluationDatasets/1M_wikitables_disjointed/819716_13583_12918/valid.csv'
+    # train_file = '/home/francesco.pugnaloni/GNNTE/Datasets/CoreEvaluationDatasets/1M_wikitables_disjointed/819716_13583_12918/train.csv'
+    # test_file = '/home/francesco.pugnaloni/GNNTE/Datasets/CoreEvaluationDatasets/1M_wikitables_disjointed/819716_13583_12918/test.csv'
+    # valid_file = '/home/francesco.pugnaloni/GNNTE/Datasets/CoreEvaluationDatasets/1M_wikitables_disjointed/819716_13583_12918/valid.csv'
     #train_file = '/home/francesco.pugnaloni/GNNTE/Datasets/wikipedia_datasets/1000_samples/train.csv'
     #test_file = '/home/francesco.pugnaloni/GNNTE/Datasets/wikipedia_datasets/1000_samples/test.csv'
     #valid_file = '/home/francesco.pugnaloni/GNNTE/Datasets/wikipedia_datasets/1000_samples/valid.csv'
+    train_file = '/home/francesco.pugnaloni/GNNTE/Datasets/2_WikiTables/1M_wikitables_disjointed/455252_52350_52530/train.csv'
+    test_file = '/home/francesco.pugnaloni/GNNTE/Datasets/2_WikiTables/1M_wikitables_disjointed/455252_52350_52530/test.csv'
+    valid_file = '/home/francesco.pugnaloni/GNNTE/Datasets/2_WikiTables/1M_wikitables_disjointed/455252_52350_52530/valid.csv'
 
-    graph_file = '/home/francesco.pugnaloni/GNNTE/Datasets/wikipedia_datasets/1MR/graphs.pkl'
+    graph_file = '/home/francesco.pugnaloni/GNNTE/Datasets/2_WikiTables/1M_wikitables_disjointed/graphs.pkl'
     #graph_file = '/home/francesco.pugnaloni/GNNTE/Datasets/wikipedia_datasets/1000_samples/graphs.pkl'
 
     
@@ -167,7 +170,7 @@ if __name__ == "__main__":
     step_size = 15
     gamma = 0.1
     GNN_type = 'GraphSAGE'
-    checkpoint = f'/home/francesco.pugnaloni/GNNTE/Datasets/CoreEvaluationDatasets/1M_wikitables_disjointed/models/12_02_23_model_850k_{GNN_type}_50_ep_dicr_800k.pth'
+    checkpoint = f'/home/francesco.pugnaloni/GNNTE/models/wikidata/wikidata_06-03-24_{GNN_type}_50_ep_max_1000_tokens.pth'
     log_wandb = True
     #dataset = "/home/francesco.pugnaloni/GNNTE/Datasets/wikipedia_datasets/1000_samples"
 

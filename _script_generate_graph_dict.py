@@ -32,7 +32,7 @@ def generate_graph_dictionary(table_dict_path: str, out_path: str, embedding_gen
     elif embedding_generation_method == 'BERT':
         embedding_buffer = Bert_Embedding_Buffer()
     else:
-        print('Embedding generation method not accepted, try "fasttext" or "BERT"')
+        print('Embedding generation method not accepted, try "fasttext", "BERT", or "sha256"')
         raise NotImplementedError()
     print('Embedding buffer instantiated')
     end = time.time()
@@ -47,7 +47,10 @@ def generate_graph_dictionary(table_dict_path: str, out_path: str, embedding_gen
     print('Graphs generation starts.....')
     for k in tqdm.tqdm(table_dict.keys()):
         try:
-            out[k] = Graph(table_dict[k], k, embedding_buffer, string_token_preprocessor, token_length_limit=None)
+            if embedding_generation_method == 'sha256':
+                out[k] = Graph_Hashed_Node_Embs(table_dict[k], k)
+            else:
+                out[k] = Graph(table_dict[k], k, embedding_buffer, string_token_preprocessor, token_length_limit=1000)
         except:
             out[k] = None
     print('Graph generation ends')
@@ -63,16 +66,16 @@ def generate_graph_dictionary(table_dict_path: str, out_path: str, embedding_gen
 
 if __name__ == "__main__":
 
-    n_params = len(sys.argv) - 1
-    expected_params = 3
+    # n_params = len(sys.argv) - 1
+    # expected_params = 3
     # if n_params != expected_params:
     #     raise ValueError(f'Wrong number of parameters, you provided {n_params} but {expected_params} are expected. \nUsage is: {sys.argv[0]} table_dict_path out_directory_path embedding_generation_method')
     # table_dict_path = sys.argv[1]
     # out_directory_path = sys.argv[2]
     # embedding_generation_method = sys.argv[3]
 
-    table_dict_path = '/home/francesco.pugnaloni/GNNTE/Datasets/wikipedia_datasets/1MR/full_table_dict_with_id.pkl'
-    out_directory_path = '/home/francesco.pugnaloni/GNNTE/Datasets/wikipedia_datasets/1MR/graphs.pkl'
-    embedding_generation_method = 'fasttext'
+    table_dict_path = '/home/francesco.pugnaloni/GNNTE/Datasets/2_WikiTables/full_table_dict_with_id.pkl'
+    out_directory_path = '/home/francesco.pugnaloni/GNNTE/Datasets/2_WikiTables/1M_wikitables_disjointed/graphs_sha256.pkl'
+    embedding_generation_method = 'sha256'
 
     graph_dict = generate_graph_dictionary(table_dict_path, out_directory_path, embedding_generation_method)

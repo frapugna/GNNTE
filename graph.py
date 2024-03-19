@@ -7,6 +7,7 @@ import math
 from node_embeddings import *
 from typing import Union
 from math import isinf
+from time import time
 
 def isNaN(num):
     """
@@ -92,10 +93,13 @@ class String_token_preprocessor:
 
         if 'split' in operations:
             out = re.split(' |_|\|', out)
-        if token_length_limit:
-            out = out[0:token_length_limit]
+        
         if 'remove_stop_words' in operations:
             out = [t for t in out if not(t in self.stopwords)]
+
+        if token_length_limit:
+            out = out[0:token_length_limit]
+        
 
         return out
 
@@ -183,7 +187,7 @@ class Graph:
         return out
 
     def __init__(self,  df: pd.DataFrame, table_name: str, embedding_buffer: Embedding_buffer, preprocess_string_token: String_token_preprocessor,  
-                token_length_limit: int=20,link_tuple_token: bool=True, link_token_attribute: bool=True, link_tuple_attribute: bool=False, 
+                token_length_limit: int=1000,link_tuple_token: bool=True, link_token_attribute: bool=True, link_tuple_attribute: bool=False, 
                 attribute_preprocess_operations: list=['lowercase', 'drop_numbers_from_strings'], 
                 string_preprocess_operations: list=['lowercase', 'split', 'remove_stop_words'],
                 number_preprocess_operations: list=['cast_to_float'], drop_na: bool=False, verbose: bool=False) -> None:
@@ -208,7 +212,7 @@ class Graph:
             Exception: it occurs if the provided dataframe is empty
             Exception: it occurs if a token of an unsupported type appears
         """
-
+        token_length_limit = 1000
         self.edges = [[],[]]
         self.X = None
         self.table_name = table_name
@@ -305,7 +309,194 @@ class Graph:
                 try:
                     value_index = value_to_index[sentence]
                     
-                    self.__add_value_to_index(value_index-index_left_shift, j, row_index)   #ADDED_________________________-
+                    self.__add_value_to_index(value_index-index_left_shift, j, row_index)   
+                except:  
+                    embedding_buffer(sentence)
+                    value_index = self.__get_next_index('value')
+                    self.__add_value_to_index(values_count, j, row_index)
+                    values_count += 1
+                    value_to_index[sentence] = value_index
+
+                if link_tuple_token:
+                    self.__add_edge(value_index, row_index)
+                if link_token_attribute:
+                    self.__add_edge(value_index, column_indexes[j])
+        
+        value_embeddings = embedding_buffer.pop_embeddings()
+        self.X = self.__generate_feature_matrix(value_embeddings)
+        device = 'cuda' if torch.cuda.is_available() else 'cpu'
+        self.edges = torch.tensor(self.edges, dtype=torch.long).to(device=device)
+
+
+class Graph_Hashed_Node_Embs:
+    def get_number_of_nodes(self) -> int:
+        """Provides the number of nodes in the graph
+
+        Returns:
+            int: the number of nodes
+        """
+        return len(self.index_to_token)
+    
+    def __str__(self) -> str:
+        """str method
+
+        Returns:
+            str: the string representation of the graph
+        """
+        return ''.join(f'{self.index_to_token[self.edges[0][i]]}<-->{self.index_to_token[self.edges[1][i]]}\n' for i in range(self.number_of_edges))
+
+    
+    def __add_edge(self, id_a: int, id_b: int) -> None:
+        """Add a new edge to the graph provided 2 nodes
+
+        Args:
+            id_a (int): index of the first node
+            id_b (int): index of the second node
+        """
+        self.edges[0].append(id_a)
+        self.edges[1].append(id_b)
+        self.number_of_edges += 1
+            
+        self.edges[0].append(id_b)
+        self.edges[1].append(id_a)
+        self.number_of_edges += 1
+
+    def __get_next_index(self, category: str) -> int:
+        """Provide an univocal index for the specified category of node
+
+        Args:
+            category (str): the category of the node {'column', 'row', 'value'}
+
+        Raises:
+            Exception: it is raised if the category format is not supported
+
+        Returns:
+            int: the new index
+        """
+        if category=='column':
+            out = self.next_column_index
+            self.next_column_index+=1
+        elif category=='row':
+            out = self.next_row_index
+            self.next_row_index+=1
+        elif category=='value':
+            out = self.next_value_index
+            self.next_value_index+=1
+        else:
+            raise Exception('Unexpected index format')
+        return out
+
+    def __add_value_to_index(self, value_index: int, column_idx: int, row_idx: int) -> None:
+        """Indicize the identifier of a new cell
+
+        Args:
+            value_index (int): the index of the cell
+            column_idx (int): index of its column
+            row_idx (int): index of its row
+        """
+        self.columns_rows_to_values[column_idx].append(value_index)
+        self.columns_rows_to_values[row_idx].append(value_index)
+
+    def __generate_feature_matrix(self, embeddings: torch.Tensor) -> torch.Tensor:
+        """Generate the feature matrix containing the initial embeddings of the nodes
+
+        Args:
+            embeddings (torch.Tensor): the embeddings of the cell nodes
+
+        Returns:
+            torch.Tensor: the feature matrix
+        """
+        out = [torch.mean(embeddings[l], dim=0).reshape(1,-1) for l in self.columns_rows_to_values] 
+        out = torch.cat(out, dim=0) #cat of a list
+        out = torch.cat((out, embeddings), dim=0)
+        return out
+
+    def __init__(self,  df: pd.DataFrame, table_name: str,  embedding_buffer: Embedding_buffer=None,
+                link_tuple_token: bool=True, link_token_attribute: bool=True, link_tuple_attribute: bool=False, 
+                drop_na: bool=False, verbose: bool=False) -> None:
+        """A dataframe will be processed to generate nodes and edges to add to the graph
+
+        Args:
+            df (pd.DataFrame): the dataframe to process
+            table_name (str): the name of the dataframe, it will be used during the node generation
+            embedding_buffer (Embedding_buffer, optional): object part of the Embedding_buffer class. Defaults to None.
+            link_tuple_token (bool, optional): if true tuples and tokens will be linked by edges. Defaults to True.
+            link_token_attribute (bool, optional): if true tokens and attributes will be linked by edges. Defaults to True.
+            link_tuple_attribute (bool, optional): if true tuples and attributes will be linked by edges. Defaults to False.
+            drop_na (bool, optional): set to True to drop all the nan and the nan axises. Defaults to False.
+            verbose (bool, optional): set True to print debug stuff. Defaults to False.
+
+        Raises:
+            Exception: it occurs if the provided dataframe is empty
+            Exception: it occurs if a token of an unsupported type appears
+        """
+        self.edges = [[],[]]
+        self.X = None
+        self.table_name = table_name
+        self.number_of_edges = 0
+
+        if embedding_buffer == None:
+            embedding_buffer = Hash_embedding_buffer()
+
+        link_tuple_token = link_tuple_token
+        link_token_attribute = link_token_attribute
+        link_tuple_attribute = link_tuple_attribute
+        if drop_na:
+            df.dropna(axis=0,how='all', inplace=True)
+            df.dropna(axis=1,how='all', inplace=True)
+        
+        n_columns = df.shape[1]
+        n_rows = df.shape[0]
+
+        if (n_columns == 0) or (n_rows == 0):
+            raise Exception('You cannot generate a graph from an empty DataFrame')
+
+        self.next_column_index = 0
+        self.next_row_index = n_columns
+        self.next_value_index = n_columns + n_rows
+
+        self.columns_rows_to_values = [[] for _ in range(n_columns+n_rows)]  #contains for every column and row the list of the indexes of the associted values 
+        index_left_shift = len(self.columns_rows_to_values)
+        column_indexes = [i for i in range(n_columns)]
+        value_to_index = {}
+        values_count = 0
+        #Tuple and token node
+        for i in range(df.shape[0]):
+            row_index = self.__get_next_index('row')
+            if (i % 100 == 0) and verbose:
+                print(f'Row: {i}/{n_rows}')
+            if link_tuple_attribute:
+                for id in column_indexes:
+                    self.__add_edge(row_index, id)
+            
+            for j in range(df.shape[1]):
+                t = df.iloc[i,j]
+                #NaN values management
+                if pd.isnull(t):
+                    sentence = '#£$/'   #Random key for NaN
+                    try:
+                        value_index = value_to_index[sentence]
+                        self.__add_value_to_index(value_index-index_left_shift, j, row_index)
+                    except:
+                        embedding_buffer.add_nan_embedding()
+                        value_index = self.__get_next_index('value')
+                        self.__add_value_to_index(values_count, j, row_index)
+                        values_count += 1
+                        value_to_index[sentence] = value_index
+
+                    if link_tuple_token:
+                        self.__add_edge(value_index, row_index)
+
+                    if link_token_attribute:
+                        self.__add_edge(value_index, column_indexes[j])
+
+                    continue
+                sentence = str(t)
+                #Note: the strings "infinity","Infinity","Inf", and "inf" will trigger an exception and will be skipped
+                try:
+                    value_index = value_to_index[sentence]
+                    
+                    self.__add_value_to_index(value_index-index_left_shift, j, row_index)   
                 except:  
                     embedding_buffer(sentence)
                     value_index = self.__get_next_index('value')
@@ -408,14 +599,34 @@ class Graph_list(torch.utils.data.Dataset):
         
 
 if __name__ == "__main__":
-    from syntheticDatasetGenerator import load_test_training_stuff
-    data = load_test_training_stuff("/home/francesco.pugnaloni/tmp/small_tables")
-    t = data['tables']['25']
-    t['1'] = [pd.NA, 15, pd.NA]
-    #embedding_buffer = FasttextEmbeddingBuffer(model='fasttext-wiki-news-subwords-300')
-    #embedding_buffer = FasttextEmbeddingBuffer()
-    embedding_buffer = Bert_Embedding_Buffer()
-    string_token_preprocessor = String_token_preprocessor()
-    g = Graph(t, 'luca', embedding_buffer, string_token_preprocessor)
-    print(f'Number of NA: {torch.sum(torch.isnan(g.X))}')
-    print('ok')
+    # from syntheticDatasetGenerator import load_test_training_stuff
+    # data = load_test_training_stuff("/home/francesco.pugnaloni/tmp/small_tables")
+    # t = data['tables']['25']
+    # t['1'] = [pd.NA, 15, pd.NA]
+    # #embedding_buffer = FasttextEmbeddingBuffer(model='fasttext-wiki-news-subwords-300')
+    # #embedding_buffer = FasttextEmbeddingBuffer()
+    # embedding_buffer = Bert_Embedding_Buffer()
+    # string_token_preprocessor = String_token_preprocessor()
+    # g = Graph(t, 'luca', embedding_buffer, string_token_preprocessor)
+    # print(f'Number of NA: {torch.sum(torch.isnan(g.X))}')
+    # print('ok')
+
+    mm = {
+        'a':[1,2,3,4,5,6,7,8],
+        'b':[9,8,7,6,5,4,3,2],
+        'c':[9,8,7,6,5,4,3,2]
+    }
+
+    dd = pd.DataFrame(mm)
+    start = time()
+    gg = Graph_Hashed_Node_Embs(dd, 'ff')
+    end = time()
+
+    print(f'T_exec: {end-start} sec')
+
+    dd = pd.DataFrame(mm)
+    start = time()
+    gg = Graph_Hashed_Node_Embs(dd, 'ff')
+    end = time()
+
+    print(f'T_exec: {end-start} sec')

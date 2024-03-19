@@ -2,6 +2,7 @@ import torch
 from transformers import BertModel, BertTokenizer
 from abc import ABC, abstractmethod
 import gensim.downloader as api
+import hashlib
 
 class Embedding_buffer(ABC):
     @abstractmethod
@@ -33,6 +34,78 @@ class Embedding_buffer(ABC):
             NotImplemented: up to the specific implementation
         """
         return NotImplemented
+
+class Hash_embedding_buffer(Embedding_buffer):
+    def __init__(self) -> None:   #'fasttext-wiki-news-subwords-300'
+        """The class init method
+
+        Args:
+            model (str, optional): The version of fasttext/word2vec to use {'fasttext-wiki-news-subwords-300', 'word2vec-google-news-300'}. Defaults to 'word2vec-google-news-300'.
+        """
+        self.vector_size = 32
+        self.n_embeddings = 0
+        self.embeddings = None
+
+    def add_nan_embedding(self) -> None:
+        """Method to manage the nan values
+        """
+        vector = torch.zeros(self.vector_size, dtype=torch.float)
+        try:
+            self.embeddings = torch.cat((self.embeddings, vector.unsqueeze(0)), dim=0)
+        except TypeError:
+            self.embeddings = vector.unsqueeze(0)
+        self.n_embeddings += 1
+
+    def add_random_embedding(self) -> None:
+        vector = torch.rand(self.vector_size, dtype=torch.float)
+        try:
+            self.embeddings = torch.cat((self.embeddings, vector.unsqueeze(0)), dim=0)
+        except TypeError:
+            self.embeddings = vector.unsqueeze(0)
+        self.n_embeddings += 1
+
+    def __get_embedding(self, word: str) -> torch.Tensor:
+        """Provide the embedding of a word
+
+        Args:
+            word (str): the word to embed
+
+        Returns:
+            torch.Tensor: the embedding of the word
+        """
+        hashobj = hashlib.sha256(word.encode())
+        hex_string = hashobj.hexdigest()
+        
+        chunk_size = 2
+        chunks = [hex_string[i:i + chunk_size] for i in range(0, len(hex_string), chunk_size)]
+
+        embedding = [int(chunk, 16) for chunk in chunks]
+
+        return embedding
+
+    def __call__(self, sentence: str) -> None:
+        """Add the sentence to embed to the buffer
+
+        Args:
+            sentence (str): sentence to embed
+        """
+        emb = torch.tensor(self.__get_embedding(sentence), dtype = torch.float)
+        self.n_embeddings += 1
+        try:
+            self.embeddings = torch.cat((self.embeddings, emb.unsqueeze(0)), dim=0)
+        except TypeError:
+            self.embeddings = emb.unsqueeze(0) 
+
+    def pop_embeddings(self) -> torch.Tensor:
+        """Return all the generated embeddings and reset the buffer
+
+        Returns:
+            torch.Tensor: tensor with one row for every embedding 
+        """
+        out = self.embeddings
+        self.embeddings = None
+        self.n_embeddings = 0
+        return out
 
 class Bert_Embedding_Generator:
     def __init__(self, output_hidden_states: bool=False, bert_lm_name: str='bert-base-uncased') -> None:

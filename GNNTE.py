@@ -86,7 +86,7 @@ class GNNTE(nn.Module):
                 nn.init.xavier_uniform_(p)
 
     def __init__(self, hidden_channels: int=300, num_layers: int=3, dropout: float=0, act: str="relu", 
-                 gnn_type: str='GIN', initial_embedding_method: str='fasttext', model_file: str=None, relu: bool=False) -> None:
+                 gnn_type: str='GraphSAGE', initial_embedding_method: str='fasttext', model_file: str=None, relu: bool=False) -> None:
         """The init function
 
         Args:
@@ -95,7 +95,7 @@ class GNNTE(nn.Module):
             dropout (float, optional): dropout probability for the weights. Defaults to 0.
             act (str, optional): The activation function between the layers. Defaults to "relu".
             gnn_type (str): the gnn to use, accepted 'GIN', 'GAT', and 'GraphSAGE'. Defaults to 'GIN'
-            initial_embedding_method (str, optional): describes the method used to generate the initial embeddings of the nodes in the graph, it determines the number of in_channels. Accepted values are 'fasttext' and 'BERT'. Defaults to 'fasttext'.
+            initial_embedding_method (str, optional): describes the method used to generate the initial embeddings of the nodes in the graph, it determines the number of in_channels. Accepted values are 'fasttext', 'BERT', and 'sha256'. Defaults to 'fasttext'.
             model_file (str, optional): this parameter can be used to load a pretrained model from a model_file
             relu (bool, optional): if set to Tre a relu layer will be added at the end of the network, it will prevent negative cosine similarities between the embeddings
         """
@@ -119,6 +119,8 @@ class GNNTE(nn.Module):
                 self.in_channels = 300
             elif initial_embedding_method == 'BERT':
                 self.in_channels = 768
+            elif initial_embedding_method == 'sha256':
+                self.in_channels = 32
             else:
                 raise NotImplementedError
             self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')

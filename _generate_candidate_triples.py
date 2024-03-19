@@ -68,9 +68,9 @@ def save_checkpoint(outdir: str, train_triples: list, test_triples: list, valid_
 
     columns = ['l_id', 'r_id', 'table_overlap']
 
-    pd.DataFrame(train, columns=columns).to_csv(outdir+'/train.csv', index=False)
-    pd.DataFrame(test, columns=columns).to_csv(outdir+'/test.csv', index=False)
-    pd.DataFrame(valid, columns=columns).to_csv(outdir+'/valid.csv', index=False)
+    pd.DataFrame(train, columns=columns).to_csv(outdir+'/train_candidates.csv', index=False)
+    pd.DataFrame(test, columns=columns).to_csv(outdir+'/test_candidates.csv', index=False)
+    pd.DataFrame(valid, columns=columns).to_csv(outdir+'/valid_candidates.csv', index=False)
 
 def get_bucket(n: float) -> int:
     """return the bucket which a sample belong to
@@ -83,9 +83,8 @@ def get_bucket(n: float) -> int:
     """
     return int(n*100//10)
 
-def generate_triples(embedding_dictionary: str | dict, out_dir: str, train_ratio: float=0.6, 
-                     validation_ratio: float=0.2, test_ratio: float=0.2, train_target: int=800000, 
-                     test_target: int=100, valid_target: int=100000) -> None:
+def generate_triples(embedding_dictionary: str | dict, out_dir: str, train_set: set | str, 
+                     test_set: set | str, valid_set: set | str) -> None:
     """method to generate the candidate train/test/val datasets
 
     Args:
@@ -101,8 +100,16 @@ def generate_triples(embedding_dictionary: str | dict, out_dir: str, train_ratio
     if isinstance(embedding_dictionary, str):
         with open(embedding_dictionary, 'rb') as f:
             embedding_dictionary = pickle.load(f)
-    
-    train_keys, test_keys, valid_keys = train_test_valid_split(list(embedding_dictionary.keys()))
+
+    if isinstance(train_set, str):
+        with open(train_set, 'rb') as f:
+            train_keys = pickle.load(f)
+        with open(test_set, 'rb') as f:
+            test_keys = pickle.load(f)
+        with open(valid_set, 'rb') as f:
+            valid_keys = pickle.load(f)
+    else:
+        train_keys, test_keys, valid_keys = train_set, test_set, valid_set
     
     get_train_triple = collection_explorer(list(train_keys), embedding_dictionary)
     get_test_triple = collection_explorer(list(test_keys), embedding_dictionary)
@@ -116,7 +123,7 @@ def generate_triples(embedding_dictionary: str | dict, out_dir: str, train_ratio
         checkpoints = 0
         i = 0
         while True:
-            if (i % 10000) == 0:
+            if (i % 100_000) == 0:
                 checkpoints+=1
                 print(f'Print saving checkpoint number {checkpoints}')
                 save_checkpoint(out_dir, train_triples, test_triples, valid_triples)
@@ -142,5 +149,8 @@ def generate_triples(embedding_dictionary: str | dict, out_dir: str, train_ratio
 
 if __name__ == '__main__':
     print('Start')
-    generate_triples(embedding_dictionary="/home/francesco.pugnaloni/GNNTE/Datasets/gittables_datasets/embeddings_partial.pkl", 
-                     out_dir='')
+    generate_triples( train_set='/home/francesco.pugnaloni/GNNTE/Datasets/1_Gittables/balanced_datasets/data_augementation_samples/train_tables_set.pkl',
+                     test_set='/home/francesco.pugnaloni/GNNTE/Datasets/1_Gittables/balanced_datasets/data_augementation_samples/test_tables_set.pkl',
+                     valid_set='/home/francesco.pugnaloni/GNNTE/Datasets/1_Gittables/balanced_datasets/data_augementation_samples/valid_tables_set.pkl',
+        embedding_dictionary="/home/francesco.pugnaloni/GNNTE/Datasets/1_Gittables/embeddings/embeddings_gittables_model_wikidata_450k_GraphSAGE_50ep.pkl", 
+                     out_dir='/home/francesco.pugnaloni/GNNTE/Datasets/1_Gittables/balanced_datasets/data_augementation_samples')

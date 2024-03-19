@@ -106,13 +106,40 @@ def run_experiment(model_file: str, table_dict_path: str | dict, experiment_data
             pickle.dump(experiment_data,f)
 
 if __name__ == '__main__':
-    run_experiment(
-        #model_file='/home/francesco.pugnaloni/GNNTE/models/model_wikidata_450k_GraphSAGE_50ep.pth', 
+    # run_experiment(
+    #     #model_file='/home/francesco.pugnaloni/GNNTE/models/model_wikidata_450k_GraphSAGE_50ep.pth', 
         
-        model_file='/home/francesco.pugnaloni/GNNTE/models/wikidata/model_wikidata_450k_GraphSAGE_50ep.pth', 
-        #table_dict_path='/home/francesco.pugnaloni/GNNTE/Datasets/just_1k_tables.pkl',
-        table_dict_path='/home/francesco.pugnaloni/GNNTE/Datasets/2_WikiTables/full_table_dict_with_id.pkl',
-        #experiment_data_file_path="/home/francesco.pugnaloni/GNNTE/Datasets/just_1k_tables_stats.pkl",
-        experiment_data_file_path="/home/francesco.pugnaloni/GNNTE/test_data/tmp/tmp.pkl",
-        embedding_file = '/home/francesco.pugnaloni/GNNTE/Datasets/2_WikiTables/embeddings/emb_wikifull_450k_15-02.pkl'
-    )
+    #     model_file='/home/francesco.pugnaloni/GNNTE/models/wikidata/model_wikidata_450k_GraphSAGE_50ep.pth', 
+    #     #table_dict_path='/home/francesco.pugnaloni/GNNTE/Datasets/just_1k_tables.pkl',
+    #     table_dict_path='/home/francesco.pugnaloni/GNNTE/Datasets/2_WikiTables/full_table_dict_with_id.pkl',
+    #     #experiment_data_file_path="/home/francesco.pugnaloni/GNNTE/Datasets/just_1k_tables_stats.pkl",
+    #     experiment_data_file_path="/home/francesco.pugnaloni/GNNTE/test_data/tmp/tmp.pkl",
+    #     embedding_file = '/home/francesco.pugnaloni/GNNTE/Datasets/2_WikiTables/embeddings/emb_wikifull_450k_15-02.pkl'
+    # )
+    # dd = pd.read_csv('/home/francesco.pugnaloni/GNNTE/test_data/t_exec/end_2_end_overlap_comparison/t_execs_compared_seconds_full_100tokens.csv')
+    # with open('/home/francesco.pugnaloni/GNNTE/Datasets/1_Gittables/table_dict_796970_good.pkl','rb') as f:
+    #     table_dict = pickle.load(f)
+
+    # table_list = []
+    # for r in tqdm.tqdm(range(dd.shape[0])):
+    #     table_list.append(dd.iloc[r]['r_id'])
+    #     table_list.append(dd.iloc[r]['s_id'])
+    # table_list = set(table_list)
+    # table_dd = {}
+    # for k in table_list:
+    #     table_dd[k] = table_dict[k]
+
+    with open('/home/francesco.pugnaloni/GNNTE/Datasets/2_WikiTables/full_table_dict_with_id.pkl', 'rb') as f:
+        table_dd = pickle.load(f)
+
+    run_experiment(
+            #model_file='/home/francesco.pugnaloni/GNNTE/models/model_wikidata_450k_GraphSAGE_50ep.pth', 
+            
+            model_file='/home/francesco.pugnaloni/GNNTE/models/wikidata/wikidata_06-03-24_GraphSAGE_50_ep_max_1000_tokens.pth', 
+            #table_dict_path='/home/francesco.pugnaloni/GNNTE/Datasets/just_1k_tables.pkl',
+            table_dict_path=table_dd,
+            #experiment_data_file_path="/home/francesco.pugnaloni/GNNTE/Datasets/just_1k_tables_stats.pkl",
+            #experiment_data_file_path="/home/francesco.pugnaloni/GNNTE/test_data/tmp/tmp.pkl",
+            #embedding_file = '/home/francesco.pugnaloni/GNNTE/test_data/t_exec/end_2_end_overlap_comparison/embeddings_100token_test_gittables.pkl'
+            embedding_file='/home/francesco.pugnaloni/GNNTE/Datasets/2_WikiTables/embeddings/emb_wiki_1000_tokens_17_03.pkl'
+        )

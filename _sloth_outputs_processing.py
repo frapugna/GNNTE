@@ -74,8 +74,8 @@ def compute_overlap_ratio(model: GNNTE, dataloader: DataLoader, device: str) -> 
     return embeddings
 
 def build_graphs(t1: pd.DataFrame, k1: str, t2: pd.DataFrame, k2: str, embedding_buffer: Embedding_buffer, string_token_preprocessor: String_token_preprocessor) -> tuple:
-    g1 = Graph(t1, k1, embedding_buffer, string_token_preprocessor, token_length_limit=20)
-    g2 = Graph(t2, k2, embedding_buffer, string_token_preprocessor, token_length_limit=20)
+    g1 = Graph(t1, k1, embedding_buffer, string_token_preprocessor, token_length_limit=100)
+    g2 = Graph(t2, k2, embedding_buffer, string_token_preprocessor, token_length_limit=100)
     return g1, g2
 
 def add_areas_cols_rows(sloth_outputs_file: pd.DataFrame | str, table_dict: dict | str, output_file: str=None) -> pd.DataFrame:
@@ -135,10 +135,41 @@ def add_areas_cols_rows(sloth_outputs_file: pd.DataFrame | str, table_dict: dict
         out.to_csv(output_file, index=False)
 
     return out
+
+def repeat_test_emb_already_computed(old_file: str | pd.DataFrame, embeddings_dict: str | dict, out_path : str=None) -> pd.DataFrame:
+    if isinstance(old_file, str):
+        old_file = pd.read_csv(old_file)
+    if isinstance(embeddings_dict, str):
+        with open(embeddings_dict, 'rb') as f:
+            embeddings_dict = pickle.load(f)
+    d = {'overlap_computations_repeated':[],
+         'overlap_computations_no_read':[]}
     
+    for r in tqdm(range(old_file.shape[0])):
+        start = time.time()
+        e1 = embeddings_dict[old_file.iloc[r]['r_id']]
+        e2 = embeddings_dict[old_file.iloc[r]['s_id']]
+        start_no_load = time.time()
+        max(float(0), F.cosine_similarity(e1, e2, dim=1))
+        end = time.time()
+
+        d['overlap_computations_repeated'].append(end-start)
+        d['overlap_computations_no_read'].append(end-start_no_load)
+
+    
+    new_cols = pd.DataFrame(d)
+    out = pd.concat([old_file, new_cols], axis=1)
+
+    if out_path:
+        out.to_csv(out_path, index=False)
+
+    print(new_cols.describe())
+
+    return out
 
 
-def recompute_embeddings_overlaps_overlap_computation_time(sloth_outputs_file: str, model_file: str, table_dict: dict, output_file: str=None) -> pd.DataFrame:
+
+def recompute_embeddings_overlaps_overlap_computation_time(sloth_outputs_file: str, model_file: str, table_dict: str, output_file: str=None) -> pd.DataFrame:
     """_summary_
 
     Args:
@@ -219,9 +250,11 @@ def recompute_embeddings_overlaps_overlap_computation_time(sloth_outputs_file: s
 
     out = pd.concat([sloth_data, new_cols], axis=1)
 
+    out = add_areas_cols_rows(sloth_outputs_file=out, table_dict=table_dict)
+
     if output_file:
         out.to_csv(output_file, index=False)
-
+    
     return out
 
 if __name__ == '__main__':
@@ -235,10 +268,14 @@ if __name__ == '__main__':
     #     sloth_outputs_file= '/home/francesco.pugnaloni/GNNTE/Datasets/1_Gittables/labelled/Test_data_Gittables/test_stats_200000.csv',
     #     model_file='/home/francesco.pugnaloni/GNNTE/models/wikidata/model_wikidata_450k_GraphSAGE_50ep.pth',
     #     table_dict='/home/francesco.pugnaloni/GNNTE/Datasets/1_Gittables/table_dict_796970_good.pkl',
-    #     output_file='/home/francesco.pugnaloni/GNNTE/test_data/t_exec/end_2_end_overlap_comparison/t_execs_compared_seconds.csv'
+    #     output_file='/home/francesco.pugnaloni/GNNTE/test_data/t_exec/end_2_end_overlap_comparison/t_execs_compared_seconds_full_100tokens.csv'
     #     )
 
-    add_areas_cols_rows(sloth_outputs_file='/home/francesco.pugnaloni/GNNTE/test_data/t_exec/end_2_end_overlap_comparison/t_execs_compared_seconds.csv',
-                        table_dict='/home/francesco.pugnaloni/GNNTE/Datasets/1_Gittables/table_dict_796970_good.pkl',
-                        output_file='/home/francesco.pugnaloni/GNNTE/test_data/t_exec/end_2_end_overlap_comparison/t_execs_compared_seconds_with_areas.csv'
-                        )
+    # add_areas_cols_rows(sloth_outputs_file='/home/francesco.pugnaloni/GNNTE/test_data/t_exec/end_2_end_overlap_comparison/t_execs_compared_seconds.csv',
+    #                     table_dict='/home/francesco.pugnaloni/GNNTE/Datasets/1_Gittables/table_dict_796970_good.pkl',
+    #                     output_file='/home/francesco.pugnaloni/GNNTE/test_data/t_exec/end_2_end_overlap_comparison/t_execs_compared_seconds_with_areas.csv'
+    #                     )
+
+    repeat_test_emb_already_computed(old_file='/home/francesco.pugnaloni/GNNTE/test_data/t_exec/end_2_end_overlap_comparison/t_execs_compared_seconds_full_100tokens.csv',
+                                     embeddings_dict='/home/francesco.pugnaloni/GNNTE/test_data/t_exec/end_2_end_overlap_comparison/embeddings_100token_test_gittables.pkl',
+                                     out_path='/home/francesco.pugnaloni/GNNTE/test_data/t_exec/end_2_end_overlap_comparison/t_execs_compared_seconds_full_100tokens_with_test_repeated_for_cossim.csv')

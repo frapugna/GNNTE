@@ -1,2 +1,0 @@
-from GNNTE import GNNTE
-

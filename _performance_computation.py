@@ -212,7 +212,7 @@ def prepare_dataset_perc_num_str_nans(labelled_dataset: str | pd.DataFrame, stat
 def print_box_plot(box_plot: dict, label_x: str=None, label_y: str=None, title: str=None) -> None:
     df = pd.DataFrame(box_plot)
     plt.figure(figsize=(8, 6))
-    df.boxplot(showfliers=False, whis=[0, 100], showmeans=True, meanline=True, medianprops=dict(color='orange'), boxprops=dict(color='black'), whiskerprops=dict(color='black'))
+    df.boxplot(showfliers=False, whis=[0, 100], showmeans=True, meanline=True, medianprops=dict(color='black'), boxprops=dict(color='black'), whiskerprops=dict(color='black'))
     for i, mean_value in enumerate(df.mean()):
         plt.annotate(f"{mean_value:.2f}", xy=(i+1, mean_value), xytext=(i+1, mean_value), color='green', ha='center', va='bottom')
 
@@ -245,6 +245,76 @@ def show_mae_per_perc_num(results_path: str | pd.DataFrame, labels_dict: str | d
         else:
             plot_dict(d,'Correct Label Range','MAE')
 
+
+def show_scatter_t_exec_sloth_arm(results: str | pd.DataFrame, x_label: str='tot_area', logx: bool=True, logy: bool=True) -> None:
+    """visualize embedding generation time on the y axis and table area on the x axis
+
+    Args:
+        exp_data_file (str | dict): path to a file containing the data related to a "embed_all_no_paral" test or the dictionary containing the actual data
+        logx (bool, opt): if True, the x axis is in logscale. Defaults to True.
+        logy (bool, opt): if True, the y axis is in logscale. Defaults to False.
+    """
+    if isinstance(results, str):
+        data = pd.read_csv(results)
+    else:
+        data = results
+
+    # areas = [data[k][x_label] for k in keys]
+    # t_execs_sloth = [data[k]['total_time'] for k in keys]
+    
+    areas = data[x_label]
+    columns = data['tot_cols']
+    rows = data['tot_rows']
+    t_execs_sloth = data['total_time']
+    t_exec_arm_total = data['total']
+    t_exec_arm_no_graph = data['embeddings_generation'] + data['overlap_computation']
+    t_exec_arm_no_emb = data['overlap_computation']
+    t_exec_arm_only_graph = data['graphs_generation']
+    t_exec_new_emb_already_comp = data['overlap_computations_repeated']
+
+    x = t_execs_sloth
+    # x = areas
+    # x = columns
+    # x = rows
+
+    # Definisci la figura e gli assi per lo scatterplot
+    fig, (ax_scatter, ax_kde) = plt.subplots(2, 1, figsize=(8, 8), 
+                                            gridspec_kw={'height_ratios': [3, 1]})
+
+    # Disegna lo scatterplot
+    #ax_scatter.axline((0, 0), (1, 1), linewidth=1, color='black', ls='--', label='Sloth')
+    ax_scatter.scatter(x, x, s=3, c='black', alpha=0.7, edgecolors='black', label='Sloth')
+    ax_scatter.scatter(x, t_exec_arm_total, s=3, c='blue', alpha=0.7, edgecolors='blue', label='New Tables')
+    #ax_scatter.scatter(x, t_exec_arm_no_emb, s=3, c='red', alpha=0.7, edgecolors='red', label='Embeddings Already Computed')
+    ax_scatter.scatter(x, t_exec_new_emb_already_comp, s=3, c='red', alpha=0.7, edgecolors='red', label='Embeddings Already Computed')
+
+    sns.histplot(
+        data=x, ax=ax_kde,
+        label='KDE',
+        fill=True, common_norm=False,
+        alpha=.5, linewidth=0, color='grey'
+    )
+    # Imposta i titoli e le etichette degli assi per lo scatterplot
+    #ax_scatter.set_title('Embedding generation time with increasing table areas')
+    ax_scatter.set_ylabel('Total Overlap Computation Time (s)')
+    
+    if logx:
+        ax_kde.set_xscale('log')    
+        ax_scatter.set_xscale('log')
+    if logy:
+        ax_scatter.set_yscale('log')
+    ax_kde.set_yscale('log')
+    ax_scatter.legend()
+
+    # Imposta le etichette degli assi per il KDE plot
+    ax_kde.set_xlabel('Sloth t_exec (s)')
+    # ax_kde.set_xlabel('Area')
+    ax_kde.set_ylabel('Number Of Samples')
+
+    # Visualizza il grafico
+    plt.tight_layout()
+    plt.show()
+
 def visualize_area_scatter_plot(stats_file: str | pd.DataFrame, label_x: str='tot_area', label_y: str='AE', logx: bool=True, logy: bool=False, 
                                 plot_bisector: bool=False, y_limit_low: int=-4000, y_limit_up: int=4000, limit_y: bool=False, 
                                 x_limit_left: int=-4000, x_limit_right: int=4000,limit_x: bool=False) -> None:
@@ -271,30 +341,23 @@ def visualize_area_scatter_plot(stats_file: str | pd.DataFrame, label_x: str='to
     if limit_y:
         ax_scatter.set_ylim(y_limit_low, y_limit_up)
     if limit_x:
-        ax_scatter.set_xlim(right=x_limit_right)
-        ax_kde.set_xlim(right=x_limit_right)
-
+        if label_x=='overlap_area_AE'and label_y=='overlap_area_true':
+            ax_scatter.set_xlim(x_limit_left, x_limit_right)
+            ax_kde.set_xlim(x_limit_left, x_limit_right)
+        else:
+            ax_scatter.set_xlim(right=x_limit_right)
+            ax_kde.set_xlim(right=x_limit_right)
+    if label_y == 'overlap_area_error':
+        ax_scatter.axline((0, 0), (1, 0), linewidth=1, color='black', ls='--')
     if plot_bisector:
-        # Calcola i limiti dell'asse x e y
-        x_min, x_max = ax_scatter.get_xlim()
-        y_min, y_max = ax_scatter.get_ylim()
-
-        # Calcola la pendenza e l'intercetta della bisettrice
-        slope = 1
-        intercept = 0
-
-        # Disegna la bisettrice
-        ax_scatter.plot([x_min, x_max], [slope * x_min + intercept, slope * x_max + intercept], color='grey', linestyle='--')
-
+        ax_scatter.axline((0, 0), (1, 1), linewidth=1, color='black', ls='--')
+        
     sns.histplot(
         data=x, ax=ax_kde,
         label='KDE',
         fill=True, common_norm=False,
         alpha=.5, linewidth=0, color='grey'
     )
-
-    
-
     # Imposta i titoli e le etichette degli assi per lo scatterplot
 
     ax_scatter.set_ylabel(label_y)
@@ -313,7 +376,7 @@ def visualize_area_scatter_plot(stats_file: str | pd.DataFrame, label_x: str='to
     ax_kde.set_yscale('log')
     
     # Imposta le etichette degli assi per il KDE plot
-    ax_kde.set_xlabel(label_x)
+    #ax_kde.set_xlabel(label_x)
     ax_kde.set_ylabel('Number Of Samples')
 
     # Visualizza il grafico
