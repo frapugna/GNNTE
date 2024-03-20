@@ -1,7 +1,7 @@
 from GNNTE import *
 
 def train_test_pipeline_split(train_file: str, test_file: str, valid_file: str, graph_file: str, model_file: str, hidden_channels: int, num_layers: int,
-                        batch_size: int=64, lr: float=0.01, dropout: float=0, 
+                        batch_size: int=64, lr: float=0.01, dropout: float=0, initial_embedding_method: str='fasttext',
                         num_epochs: int=100, weight_decay: float=0.0001, act: str='relu', log_wandb: bool=False,
                         step_size: int=15, gamma: float=0.1, gnn_type: str='GIN', compute_bins_stats: bool=False, relu: bool=False) -> GNNTE:
     """This function performs the full train-validate-test pipeline
@@ -48,7 +48,7 @@ def train_test_pipeline_split(train_file: str, test_file: str, valid_file: str, 
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     
-    model = GNNTE(hidden_channels, num_layers, dropout=dropout, act=act, gnn_type=gnn_type, relu=relu)
+    model = GNNTE(hidden_channels, num_layers, dropout=dropout, act=act, gnn_type=gnn_type, relu=relu, initial_embedding_method=initial_embedding_method)
     start = time.time()
 
     print('Training starts')
@@ -85,9 +85,8 @@ def train_test_pipeline_split(train_file: str, test_file: str, valid_file: str, 
     return execution_insights
 
 def run_GNNTE_experiment_split(project_name: str, train_file: str, test_file: str, valid_file: str, graph_file: str, checkpoint: str, lr: float, batch_size: int,
-                         num_epochs: int, out_channels: int, n_layers: int, dropout: float,
-                         weight_decay: float, step_size: int, gamma: float,
-                         gnn_type: str, log_wandb=False, relu: bool=False) -> None:
+                         num_epochs: int, out_channels: int, n_layers: int, dropout: float, weight_decay: float, step_size: int, gamma: float, 
+                         gnn_type: str, initial_embedding_method: str='fasttext', log_wandb=False, relu: bool=False) -> None:
     """Utility function to run experiments that will be logged in wandb
 
     Args:
@@ -138,7 +137,7 @@ def run_GNNTE_experiment_split(project_name: str, train_file: str, test_file: st
     train_test_pipeline_split(train_file=train_file, test_file=test_file, valid_file=valid_file, graph_file=graph_file, model_file=checkpoint, hidden_channels=out_channels, num_layers=n_layers, 
                         num_epochs=num_epochs, batch_size=batch_size, lr=lr, dropout=dropout, log_wandb=log_wandb,
                         weight_decay=weight_decay, step_size=step_size, gamma=gamma, gnn_type=gnn_type, compute_bins_stats=True,
-                        relu=relu)
+                        relu=relu, initial_embedding_method=initial_embedding_method)
         
     wandb.finish()
 
@@ -150,11 +149,11 @@ if __name__ == "__main__":
     #train_file = '/home/francesco.pugnaloni/GNNTE/Datasets/wikipedia_datasets/1000_samples/train.csv'
     #test_file = '/home/francesco.pugnaloni/GNNTE/Datasets/wikipedia_datasets/1000_samples/test.csv'
     #valid_file = '/home/francesco.pugnaloni/GNNTE/Datasets/wikipedia_datasets/1000_samples/valid.csv'
-    train_file = '/home/francesco.pugnaloni/GNNTE/Datasets/2_WikiTables/1M_wikitables_disjointed/455252_52350_52530/train.csv'
-    test_file = '/home/francesco.pugnaloni/GNNTE/Datasets/2_WikiTables/1M_wikitables_disjointed/455252_52350_52530/test.csv'
-    valid_file = '/home/francesco.pugnaloni/GNNTE/Datasets/2_WikiTables/1M_wikitables_disjointed/455252_52350_52530/valid.csv'
+    train_file = '/home/francesco.pugnaloni/GNNTE/Datasets/2_WikiTables/1M_wikitables_disjointed/train_test_val_datasets/train.csv'
+    test_file = '/home/francesco.pugnaloni/GNNTE/Datasets/2_WikiTables/1M_wikitables_disjointed/train_test_val_datasets/test.csv'
+    valid_file = '/home/francesco.pugnaloni/GNNTE/Datasets/2_WikiTables/1M_wikitables_disjointed/train_test_val_datasets/valid.csv'
 
-    graph_file = '/home/francesco.pugnaloni/GNNTE/Datasets/2_WikiTables/1M_wikitables_disjointed/graphs.pkl'
+    graph_file = '/home/francesco.pugnaloni/GNNTE/Datasets/2_WikiTables/1M_wikitables_disjointed/graphs_sha256.pkl'
     #graph_file = '/home/francesco.pugnaloni/GNNTE/Datasets/wikipedia_datasets/1000_samples/graphs.pkl'
 
     
@@ -164,14 +163,15 @@ if __name__ == "__main__":
     num_epochs = 50
     #num_epochs = 10
     out_channels = 300
-    n_layers = 3
+    n_layers = 4
     dropout_prob = 0
     weight_decay = 0.0001
     step_size = 15
     gamma = 0.1
     GNN_type = 'GraphSAGE'
-    checkpoint = f'/home/francesco.pugnaloni/GNNTE/models/wikidata/wikidata_06-03-24_{GNN_type}_50_ep_max_1000_tokens.pth'
+    checkpoint = f'/home/francesco.pugnaloni/GNNTE/models/wikidata/wikidata_19-03-24_{GNN_type}_50_ep_max_1000_tokens_init_emb_sha256_4_layers.pth'
     log_wandb = True
+    initial_embedding_method = 'sha256'
     #dataset = "/home/francesco.pugnaloni/GNNTE/Datasets/wikipedia_datasets/1000_samples"
 
     #graphs_path = dataset+"/graphs.pkl"
@@ -181,7 +181,7 @@ if __name__ == "__main__":
     run_GNNTE_experiment_split(project_name=name, train_file=train_file, test_file=test_file, valid_file=valid_file, graph_file=graph_file, 
                                checkpoint=checkpoint, lr=lr, batch_size=batch_size, num_epochs=num_epochs, out_channels=out_channels, n_layers=n_layers, 
                                dropout=dropout_prob, weight_decay=weight_decay, step_size=step_size, gamma=gamma, gnn_type=GNN_type,
-                               log_wandb=log_wandb
+                               log_wandb=log_wandb, initial_embedding_method=initial_embedding_method
                                )
 
     print('Finish')

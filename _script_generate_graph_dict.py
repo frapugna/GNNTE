@@ -31,6 +31,8 @@ def generate_graph_dictionary(table_dict_path: str, out_path: str, embedding_gen
         embedding_buffer = FasttextEmbeddingBuffer(model='fasttext-wiki-news-subwords-300')
     elif embedding_generation_method == 'BERT':
         embedding_buffer = Bert_Embedding_Buffer()
+    elif embedding_generation_method == 'sha256':
+        embedding_buffer = None
     else:
         print('Embedding generation method not accepted, try "fasttext", "BERT", or "sha256"')
         raise NotImplementedError()

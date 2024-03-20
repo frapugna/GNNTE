@@ -1,4 +1,4 @@
-from _script_embed_compare_triple_dataset import *
+from _script_overlap_computation import *
 import tqdm
 import matplotlib.pyplot as plt
 
@@ -15,14 +15,19 @@ def run_experiment_instance(model_file: str, table_dict: dict, embeddings: dict=
     print('Loading model....')
     model = GNNTE(model_file=model_file)
     print('Model loaded')
-    
+    in_channels = model.in_channels
     print('Loading embedding_buffer....')
-    embedding_buffer = FasttextEmbeddingBuffer(model='fasttext-wiki-news-subwords-300')
-    print('embedding_buffer loaded....')
+    if in_channels == 300:
+        embedding_buffer = FasttextEmbeddingBuffer(model='fasttext-wiki-news-subwords-300')
+        print('embedding_buffer loaded....')
+        print('Loading string_token_preprocessor....')
+        string_token_preprocessor = String_token_preprocessor()
+        print('string_token_preprocessor loaded')
+    else:
+        embedding_buffer = Hash_embedding_buffer()
+        print('embedding_buffer loaded....')
 
-    print('Loading string_token_preprocessor....')
-    string_token_preprocessor = String_token_preprocessor()
-    print('string_token_preprocessor loaded')
+    
     
     experiment_data = {}
     
@@ -32,7 +37,10 @@ def run_experiment_instance(model_file: str, table_dict: dict, embeddings: dict=
         start = time.time()
         #gen graph
         try:
-            g = {k:Graph(table_dict[k], k, embedding_buffer, string_token_preprocessor, token_length_limit=None)}
+            if in_channels == 300:
+                g = {k:Graph(table_dict[k], k, embedding_buffer, string_token_preprocessor, token_length_limit=None)}
+            else:
+                g = {k:Graph_Hashed_Node_Embs(table_dict[k], k)}
         except:
             continue
         end_graph = time.time()
@@ -135,11 +143,12 @@ if __name__ == '__main__':
     run_experiment(
             #model_file='/home/francesco.pugnaloni/GNNTE/models/model_wikidata_450k_GraphSAGE_50ep.pth', 
             
-            model_file='/home/francesco.pugnaloni/GNNTE/models/wikidata/wikidata_06-03-24_GraphSAGE_50_ep_max_1000_tokens.pth', 
+            #model_file='/home/francesco.pugnaloni/GNNTE/models/wikidata/wikidata_06-03-24_GraphSAGE_50_ep_max_1000_tokens.pth', 
+            model_file = '/home/francesco.pugnaloni/GNNTE/models/wikidata/wikidata_19-03-24_GraphSAGE_50_ep_max_1000_tokens_init_emb_sha256.pth',
             #table_dict_path='/home/francesco.pugnaloni/GNNTE/Datasets/just_1k_tables.pkl',
             table_dict_path=table_dd,
             #experiment_data_file_path="/home/francesco.pugnaloni/GNNTE/Datasets/just_1k_tables_stats.pkl",
             #experiment_data_file_path="/home/francesco.pugnaloni/GNNTE/test_data/tmp/tmp.pkl",
             #embedding_file = '/home/francesco.pugnaloni/GNNTE/test_data/t_exec/end_2_end_overlap_comparison/embeddings_100token_test_gittables.pkl'
-            embedding_file='/home/francesco.pugnaloni/GNNTE/Datasets/2_WikiTables/embeddings/emb_wiki_1000_tokens_17_03.pkl'
+            embedding_file='/home/francesco.pugnaloni/GNNTE/Datasets/2_WikiTables/embeddings/emb_wiki_20_03_sha256.pkl'
         )

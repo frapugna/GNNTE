@@ -1,6 +1,6 @@
 import pickle
 from train_test_valid_split_disjointed import train_test_split
-from _script_embed_compare_triple_dataset import *
+from _script_overlap_computation import *
 from itertools import chain
 from graph import get_order_of_magnitude
 

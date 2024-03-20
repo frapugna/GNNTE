@@ -385,16 +385,16 @@ def visualize_area_scatter_plot(stats_file: str | pd.DataFrame, label_x: str='to
 
 
 if __name__ == '__main__':
-    # predict_overlap_compute_AE(unlabelled='/home/francesco.pugnaloni/GNNTE/Datasets/2_WikiTables/1M_wikitables_disjointed/455252_52350_52530/test.csv', 
-    #                            embedding_dict='/home/francesco.pugnaloni/GNNTE/Datasets/2_WikiTables/embeddings/emb_wikifull_450k_15-02.pkl', 
-    #                            out_path='/home/francesco.pugnaloni/GNNTE/test_data/performance/1_x_bins_y_MAE/wikitables/455252_52350_52530_labelled.csv')
+    predict_overlap_compute_AE(unlabelled='/home/francesco.pugnaloni/GNNTE/Datasets/2_WikiTables/1M_wikitables_disjointed/train_test_val_datasets/test.csv', 
+                               embedding_dict='/home/francesco.pugnaloni/GNNTE/Datasets/2_WikiTables/embeddings/emb_wiki_20_03_sha256.pkl', 
+                               out_path='/home/francesco.pugnaloni/GNNTE/test_data/performance/1_x_bins_y_MAE/wikitables/455252_52350_52530_labelled_sha256.csv')
     
     #show_mae_per_bin('/home/francesco.pugnaloni/GNNTE/test_data/performance/1_x_bins_y_MAE/wikitables/455252_52350_52530_labelled.csv')
 
-    df = prepare_dataset_perc_num_str_nans(
-        '/home/francesco.pugnaloni/GNNTE/test_data/performance/1_x_bins_y_MAE/wikitables/455252_52350_52530_labelled.csv',
-        '/home/francesco.pugnaloni/GNNTE/Datasets/2_WikiTables/stats/stats.pkl',
-        '/home/francesco.pugnaloni/GNNTE/test_data/performance/samples_enriched_for_plotting.csv'
-        )
+    # df = prepare_dataset_perc_num_str_nans(
+    #     '/home/francesco.pugnaloni/GNNTE/test_data/performance/1_x_bins_y_MAE/wikitables/455252_52350_52530_labelled.csv',
+    #     '/home/francesco.pugnaloni/GNNTE/Datasets/2_WikiTables/stats/stats.pkl',
+    #     '/home/francesco.pugnaloni/GNNTE/test_data/performance/samples_enriched_for_plotting.csv'
+    #     )
     
     # show_mae_per_bin('/home/francesco.pugnaloni/GNNTE/test_data/performance/1_x_bins_y_MAE/wikitables/455252_52350_52530_labelled.csv', box=True)

@@ -256,7 +256,7 @@ if __name__ == "__main__":
     results = run_experiment(model_file="/home/francesco.pugnaloni/GNNTE/models/GNNTE_1M_thesis.pth",
                             #table_dict_path="/home/francesco.pugnaloni/GNNTE/Datasets/CoreEvaluationDatasets/1M_wikitables_disjointed/table_dict_full.pkl",
                             triple_dataset_file='/home/francesco.pugnaloni/GNNTE/Datasets/CoreEvaluationDatasets/100k_valid_wikitables/100k_samples.csv',
-                            embeddings_dict_path='/home/francesco.pugnaloni/GNNTE/Datasets/wikipedia_datasets/1MR/embeddings_full_wikidata_GNNTE_1M_thesis.pkl',
+                            embeddings_dict_path='/home/francesco.pugnaloni/GNNTE/Datasets/2_WikiTables/embeddings/emb_wiki_20_03_sha256.pkl',
                             #graph_dict_path='/home/francesco.pugnaloni/GNNTE/Datasets/wikipedia_datasets/1MR/graphs.pkl'
                             result_table_out_path='/home/francesco.pugnaloni/GNNTE/Datasets/CoreEvaluationDatasets/100k_valid_wikitables/100k_samples.csv/test_results_plottable.csv'
                             )

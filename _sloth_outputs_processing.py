@@ -3,7 +3,7 @@ import numpy as np
 from tqdm import tqdm
 import pickle
 import torch.nn.functional as F
-from _script_embed_compare_triple_dataset import *
+from _script_overlap_computation import *
 import matplotlib.pyplot as plt
 
 def clean_sloth(path: str | pd.DataFrame, outpath: str=None) -> pd.DataFrame:
@@ -73,9 +73,13 @@ def compute_overlap_ratio(model: GNNTE, dataloader: DataLoader, device: str) -> 
                 embeddings = emb
     return embeddings
 
-def build_graphs(t1: pd.DataFrame, k1: str, t2: pd.DataFrame, k2: str, embedding_buffer: Embedding_buffer, string_token_preprocessor: String_token_preprocessor) -> tuple:
-    g1 = Graph(t1, k1, embedding_buffer, string_token_preprocessor, token_length_limit=100)
-    g2 = Graph(t2, k2, embedding_buffer, string_token_preprocessor, token_length_limit=100)
+def build_graphs(t1: pd.DataFrame, k1: str, t2: pd.DataFrame, k2: str, embedding_buffer: Embedding_buffer=None, string_token_preprocessor: String_token_preprocessor=None) -> tuple:
+    if string_token_preprocessor == None:
+        g1 = Graph_Hashed_Node_Embs(t1, k1)
+        g2 = Graph_Hashed_Node_Embs(t2, k2)
+    else:
+        g1 = Graph(t1, k1, embedding_buffer, string_token_preprocessor, token_length_limit=100)
+        g2 = Graph(t2, k2, embedding_buffer, string_token_preprocessor, token_length_limit=100)
     return g1, g2
 
 def add_areas_cols_rows(sloth_outputs_file: pd.DataFrame | str, table_dict: dict | str, output_file: str=None) -> pd.DataFrame:
@@ -192,13 +196,20 @@ def recompute_embeddings_overlaps_overlap_computation_time(sloth_outputs_file: s
     model = GNNTE(model_file=model_file)
     print('Model loaded')
 
-    print('Loading embedding_buffer....')
-    embedding_buffer = FasttextEmbeddingBuffer(model='fasttext-wiki-news-subwords-300')
-    print('embedding_buffer loaded....')
-
-    print('Loading string_token_preprocessor....')
-    string_token_preprocessor = String_token_preprocessor()
-    print('string_token_preprocessor loaded')
+    
+    if model.in_channels == 300:
+        print('Loading embedding_buffer....')
+        embedding_buffer = FasttextEmbeddingBuffer(model='fasttext-wiki-news-subwords-300')
+        print('embedding_buffer loaded....')
+    else:
+        embedding_buffer = None
+    
+    if model.in_channels == 300:
+        print('Loading string_token_preprocessor....')
+        string_token_preprocessor = String_token_preprocessor()
+        print('string_token_preprocessor loaded')
+    else:
+        string_token_preprocessor = None
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -264,18 +275,18 @@ if __name__ == '__main__':
     #                       embedding_dict='/home/francesco.pugnaloni/GNNTE/Datasets/1_Gittables/embeddings/embeddings_gittables_model_wikidata_450k_GraphSAGE_50ep.pkl',
     #                       out_path='/home/francesco.pugnaloni/GNNTE/Datasets/1_Gittables/labelled/old_data/valid_stats_cleaned_450k_with_AE.csv'
     #                       )
-    # recompute_embeddings_overlaps_overlap_computation_time(
-    #     sloth_outputs_file= '/home/francesco.pugnaloni/GNNTE/Datasets/1_Gittables/labelled/Test_data_Gittables/test_stats_200000.csv',
-    #     model_file='/home/francesco.pugnaloni/GNNTE/models/wikidata/model_wikidata_450k_GraphSAGE_50ep.pth',
-    #     table_dict='/home/francesco.pugnaloni/GNNTE/Datasets/1_Gittables/table_dict_796970_good.pkl',
-    #     output_file='/home/francesco.pugnaloni/GNNTE/test_data/t_exec/end_2_end_overlap_comparison/t_execs_compared_seconds_full_100tokens.csv'
-    #     )
+    recompute_embeddings_overlaps_overlap_computation_time(
+        sloth_outputs_file= '/home/francesco.pugnaloni/GNNTE/Datasets/1_Gittables/labelled/Test_data_Gittables/test_stats_200000.csv',
+        model_file='/home/francesco.pugnaloni/GNNTE/models/wikidata/wikidata_19-03-24_GraphSAGE_50_ep_max_1000_tokens_init_emb_sha256.pth',
+        table_dict='/home/francesco.pugnaloni/GNNTE/Datasets/1_Gittables/table_dict_796970_good.pkl',
+        output_file='/home/francesco.pugnaloni/GNNTE/test_data/t_exec/end_2_end_overlap_comparison/t_execs_compared_seconds_full_sha256.csv'
+        )
 
     # add_areas_cols_rows(sloth_outputs_file='/home/francesco.pugnaloni/GNNTE/test_data/t_exec/end_2_end_overlap_comparison/t_execs_compared_seconds.csv',
     #                     table_dict='/home/francesco.pugnaloni/GNNTE/Datasets/1_Gittables/table_dict_796970_good.pkl',
     #                     output_file='/home/francesco.pugnaloni/GNNTE/test_data/t_exec/end_2_end_overlap_comparison/t_execs_compared_seconds_with_areas.csv'
     #                     )
 
-    repeat_test_emb_already_computed(old_file='/home/francesco.pugnaloni/GNNTE/test_data/t_exec/end_2_end_overlap_comparison/t_execs_compared_seconds_full_100tokens.csv',
-                                     embeddings_dict='/home/francesco.pugnaloni/GNNTE/test_data/t_exec/end_2_end_overlap_comparison/embeddings_100token_test_gittables.pkl',
-                                     out_path='/home/francesco.pugnaloni/GNNTE/test_data/t_exec/end_2_end_overlap_comparison/t_execs_compared_seconds_full_100tokens_with_test_repeated_for_cossim.csv')
+    # repeat_test_emb_already_computed(old_file='/home/francesco.pugnaloni/GNNTE/test_data/t_exec/end_2_end_overlap_comparison/t_execs_compared_seconds_full_100tokens.csv',
+    #                                  embeddings_dict='/home/francesco.pugnaloni/GNNTE/test_data/t_exec/end_2_end_overlap_comparison/embeddings_100token_test_gittables.pkl',
+    #                                  out_path='/home/francesco.pugnaloni/GNNTE/test_data/t_exec/end_2_end_overlap_comparison/t_execs_compared_seconds_full_100tokens_with_test_repeated_for_cossim.csv')
