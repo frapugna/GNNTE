@@ -269,7 +269,7 @@ def recompute_embeddings_overlaps_overlap_computation_time(sloth_outputs_file: s
     return out
 
 if __name__ == '__main__':
-    #clean_sloth('/home/francesco.pugnaloni/GNNTE/Datasets/1_Gittables/labelled/old_data/valid_stats.csv','/home/francesco.pugnaloni/GNNTE/Datasets/1_Gittables/labelled/old_data/valid_stats_cleaned.csv')
+    clean_sloth('/home/francesco.pugnaloni/GNNTE/Datasets/1_Gittables/labelled/old_data/valid_stats.csv','/home/francesco.pugnaloni/GNNTE/Datasets/1_Gittables/labelled/old_data/valid_stats_cleaned.csv')
     
     # re_evaluate_sloth_out(cleaned_sloth_output='/home/francesco.pugnaloni/GNNTE/Datasets/1_Gittables/labelled/old_data/valid_stats_cleaned.csv',
     #                       embedding_dict='/home/francesco.pugnaloni/GNNTE/Datasets/1_Gittables/embeddings/embeddings_gittables_model_wikidata_450k_GraphSAGE_50ep.pkl',

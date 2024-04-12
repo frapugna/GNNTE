@@ -273,7 +273,7 @@ def train_test_pipeline(triple_file: str, graph_file: str, model_file: str, hidd
 
     return execution_insights
 
-def train(model, train_dataset, valid_dataset, batch_size, lr, num_epochs, device, model_file: str, 
+def train(model, train_dataset, valid_dataset, batch_size, lr, num_epochs, device, model_file: str, loss_type: str='MSE',  
           shuffle: bool=False, num_workers: int=0, weight_decay: float=5e-4, log_wandb: bool=False, step_size: int=5, gamma: float=0.1) -> GNNTE:
     """This function execute the training operation
 
@@ -306,7 +306,15 @@ def train(model, train_dataset, valid_dataset, batch_size, lr, num_epochs, devic
     scheduler = lr_scheduler.StepLR(optimizer, step_size=step_size, gamma=gamma)
 
     # loss
-    loss_criterion = nn.MSELoss()
+    if loss_type == 'MSE':
+        print('Using MSELoss criterion')
+        loss_criterion = nn.MSELoss()
+    elif loss_type == 'MAE':
+        print('Using L1Loss criterion')
+        loss_criterion = nn.L1Loss()
+    else:
+        print('Loss criterion not supported')
+        raise Exception()
 
     best_loss = float('inf')
     for epoch in tqdm(range(num_epochs)):
@@ -446,8 +454,12 @@ def test_bins(model: GNNTE, test_dataset: GraphTriplesDataset, batch_size: int=6
     samples = test_dataset.triples
     count = 0
     while right <= 1:
-        tmp = samples[samples['table_overlap'] >= left][:]
-        tmp = tmp[tmp['table_overlap'] < right][:]
+        try:
+            tmp = samples[samples['table_overlap'] >= left][:]
+            tmp = tmp[tmp['table_overlap'] < right][:]
+        except:
+            tmp = samples[samples['a%'] >= left][:]
+            tmp = tmp[tmp['a%'] < right][:]
         eval_loader = DataLoader(GraphTriplesDataset(tmp, graphs), 
                                 batch_size=batch_size,  
                                 num_workers=num_workers, 

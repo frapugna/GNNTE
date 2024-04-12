@@ -100,7 +100,6 @@ class String_token_preprocessor:
         if token_length_limit:
             out = out[0:token_length_limit]
         
-
         return out
 
 class Graph:
@@ -185,8 +184,115 @@ class Graph:
         out = torch.cat(out, dim=0) #cat of a list
         out = torch.cat((out, embeddings), dim=0)
         return out
+    
+    def __init__(self,  df: pd.DataFrame, table_name: str, embedding_buffer_type: str='sha256', embedding_buffer: Embedding_buffer=None, preprocess_string_token: String_token_preprocessor=None,  
+            token_length_limit: int=1000,link_tuple_token: bool=True, link_token_attribute: bool=True, link_tuple_attribute: bool=False, 
+            attribute_preprocess_operations: list=['lowercase', 'drop_numbers_from_strings'], 
+            string_preprocess_operations: list=['lowercase', 'split', 'remove_stop_words'],
+            number_preprocess_operations: list=['cast_to_float'], drop_na: bool=False, verbose: bool=False, 
+            merge_nodes_same_value: bool=True) -> None:
+        if embedding_buffer_type == 'sha256':
+            self.init_sha256(df=df, table_name=table_name,embedding_buffer=embedding_buffer, link_tuple_token=link_tuple_token, merge_nodes_same_value=merge_nodes_same_value,
+                             link_token_attribute=link_token_attribute, link_tuple_attribute=link_tuple_attribute, drop_na=drop_na, verbose=verbose)
+        elif embedding_buffer_type == 'fasttext':
+            self.init_fasttext(df=df, table_name=table_name, embedding_buffer=embedding_buffer, preprocess_string_token=preprocess_string_token,
+                               token_length_limit=token_length_limit, link_tuple_token=link_tuple_token, link_token_attribute=link_token_attribute,
+                               link_tuple_attribute=link_tuple_attribute, attribute_preprocess_operations=attribute_preprocess_operations, string_preprocess_operations=string_preprocess_operations,
+                               number_preprocess_operations=number_preprocess_operations, drop_na=drop_na, verbose=verbose)
 
-    def __init__(self,  df: pd.DataFrame, table_name: str, embedding_buffer: Embedding_buffer, preprocess_string_token: String_token_preprocessor,  
+    def init_sha256(self,  df: pd.DataFrame, table_name: str,  embedding_buffer: Embedding_buffer=None,
+                link_tuple_token: bool=True, link_token_attribute: bool=True, link_tuple_attribute: bool=False, 
+                drop_na: bool=False, verbose: bool=False, merge_nodes_same_value: bool=False) -> None:
+        """A dataframe will be processed to generate nodes and edges to add to the graph
+
+        Args:
+            df (pd.DataFrame): the dataframe to process
+            table_name (str): the name of the dataframe, it will be used during the node generation
+            embedding_buffer (Embedding_buffer, optional): object part of the Embedding_buffer class. Defaults to None.
+            link_tuple_token (bool, optional): if true tuples and tokens will be linked by edges. Defaults to True.
+            link_token_attribute (bool, optional): if true tokens and attributes will be linked by edges. Defaults to True.
+            link_tuple_attribute (bool, optional): if true tuples and attributes will be linked by edges. Defaults to False.
+            drop_na (bool, optional): set to True to drop all the nan and the nan axises. Defaults to False.
+            verbose (bool, optional): set True to print debug stuff. Defaults to False.
+
+        Raises:
+            Exception: it occurs if the provided dataframe is empty
+            Exception: it occurs if a token of an unsupported type appears
+        """
+        self.edges = [[],[]]
+        self.X = None
+        self.table_name = table_name
+        self.number_of_edges = 0
+
+        if embedding_buffer == None:
+            embedding_buffer = Hash_embedding_buffer()
+
+        link_tuple_token = link_tuple_token
+        link_token_attribute = link_token_attribute
+        link_tuple_attribute = link_tuple_attribute
+        if drop_na:
+            df.dropna(axis=0,how='all', inplace=True)
+            df.dropna(axis=1,how='all', inplace=True)
+        
+        n_columns = df.shape[1]
+        n_rows = df.shape[0]
+
+        if (n_columns == 0) or (n_rows == 0):
+            raise Exception('You cannot generate a graph from an empty DataFrame')
+
+        self.next_column_index = 0
+        self.next_row_index = n_columns
+        self.next_value_index = n_columns + n_rows
+
+        self.columns_rows_to_values = [[] for _ in range(n_columns+n_rows)]  #contains for every column and row the list of the indexes of the associted values 
+        index_left_shift = len(self.columns_rows_to_values)
+        column_indexes = [i for i in range(n_columns)]
+        value_to_index = {}
+        values_count = 0
+        #Tuple and token node
+        for i in range(df.shape[0]):
+            row_index = self.__get_next_index('row')
+            if (i % 100 == 0) and verbose:
+                print(f'Row: {i}/{n_rows}')
+            if link_tuple_attribute:
+                for id in column_indexes:
+                    self.__add_edge(row_index, id)
+            
+            for j in range(df.shape[1]):
+                t = df.iloc[i,j]
+                #NaN values management
+                if pd.isnull(t):
+                    sentence = 'NULL'
+                sentence = str(t)
+                if merge_nodes_same_value:
+                    try:
+                        value_index = value_to_index[sentence]
+                        
+                        self.__add_value_to_index(value_index-index_left_shift, j, row_index)   
+                    except:  
+                        embedding_buffer(sentence)
+                        value_index = self.__get_next_index('value')
+                        self.__add_value_to_index(values_count, j, row_index)
+                        values_count += 1
+                        value_to_index[sentence] = value_index
+                else:
+                    embedding_buffer(sentence)
+                    value_index = self.__get_next_index('value')
+                    self.__add_value_to_index(values_count, j, row_index)
+                    values_count += 1
+                    value_to_index[sentence] = value_index
+
+                if link_tuple_token:
+                    self.__add_edge(value_index, row_index)
+                if link_token_attribute:
+                    self.__add_edge(value_index, column_indexes[j])
+        
+        value_embeddings = embedding_buffer.pop_embeddings()
+        self.X = self.__generate_feature_matrix(value_embeddings)
+        #device = 'cuda' if torch.cuda.is_available() else 'cpu'
+        self.edges = torch.tensor(self.edges, dtype=torch.long)#.to(device=device)
+
+    def init_fasttext(self,  df: pd.DataFrame, table_name: str, embedding_buffer: Embedding_buffer=None, preprocess_string_token: String_token_preprocessor=None,  
                 token_length_limit: int=1000,link_tuple_token: bool=True, link_token_attribute: bool=True, link_tuple_attribute: bool=False, 
                 attribute_preprocess_operations: list=['lowercase', 'drop_numbers_from_strings'], 
                 string_preprocess_operations: list=['lowercase', 'split', 'remove_stop_words'],
@@ -324,8 +430,8 @@ class Graph:
         
         value_embeddings = embedding_buffer.pop_embeddings()
         self.X = self.__generate_feature_matrix(value_embeddings)
-        device = 'cuda' if torch.cuda.is_available() else 'cpu'
-        self.edges = torch.tensor(self.edges, dtype=torch.long).to(device=device)
+        #device = 'cuda' if torch.cuda.is_available() else 'cpu'
+        self.edges = torch.tensor(self.edges, dtype=torch.long)#.to(device=device)
 
 
 class Graph_Hashed_Node_Embs:
@@ -511,8 +617,8 @@ class Graph_Hashed_Node_Embs:
         
         value_embeddings = embedding_buffer.pop_embeddings()
         self.X = self.__generate_feature_matrix(value_embeddings)
-        device = 'cuda' if torch.cuda.is_available() else 'cpu'
-        self.edges = torch.tensor(self.edges, dtype=torch.long).to(device=device)
+        #device = 'cuda' if torch.cuda.is_available() else 'cpu'
+        self.edges = torch.tensor(self.edges, dtype=torch.long)#.to(device=device)
 
 class Graph_list(torch.utils.data.Dataset):
     def __init__(self, directory_name: str=False,save: bool=False, load: bool=False) -> None:
@@ -619,14 +725,14 @@ if __name__ == "__main__":
 
     dd = pd.DataFrame(mm)
     start = time()
-    gg = Graph_Hashed_Node_Embs(dd, 'ff')
+    gg = Graph(dd, 'ff', 'sha256')
     end = time()
 
     print(f'T_exec: {end-start} sec')
 
     dd = pd.DataFrame(mm)
     start = time()
-    gg = Graph_Hashed_Node_Embs(dd, 'ff')
+    grg = Graph(dd, 'ff', 'sha256', merge_nodes_same_value=False)
     end = time()
 
     print(f'T_exec: {end-start} sec')

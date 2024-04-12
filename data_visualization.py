@@ -5,6 +5,55 @@ from tqdm import tqdm
 import numpy as np
 import seaborn as sns
 
+def compare_models_hist(data: pd.DataFrame | str, bin_criterion: str='a%', bins_name: str='Correct Label') -> pd.DataFrame:
+    """Function to plot an histogram to compare performances of different models depending on their range of error 
+
+    Args:
+        data (pd.DataFrame | str): data frame containing the results
+        bin_criterion (str, optional): parameter to generate the 10 bins, must be with values in [0,1]. Defaults to 'a%'.
+        bins_name (str, optional): name of the bins. Defaults to 'AE'.
+    """
+    if isinstance(data, str):
+        data = pd.read_csv(data)
+
+    ranges = f'{bins_name} Range' 
+    new_data = {
+        ranges:[],
+        'Approach':[],
+        'MAE':[]
+    }
+    for i in range(1, 11, 1):
+        i /= 10
+        prev = round(i-0.1, 2)
+        t = data[data[bin_criterion] >= prev]
+        if i == 1:
+            t = t[t[bin_criterion] <= i]
+        else:
+            t = t[t[bin_criterion] < i]
+        
+        #curr =  f'{prev}_{i}'
+        curr =  f'[{prev},{i}]'
+        #curr =  f'{prev},{i}'
+
+        new_data['Approach'].append('Armadillo')
+        new_data[ranges].append(curr)
+        new_data['MAE'].append(round(np.mean(t['AE_armadillo']),2))
+
+        new_data['Approach'].append('Overlap Set Similarity')
+        new_data[ranges].append(curr)
+        new_data['MAE'].append(round(np.mean(t['AE_josie']),2))
+
+        new_data['Approach'].append('Jaccard Similarity')
+        new_data[ranges].append(curr)
+        new_data['MAE'].append(round(np.mean(t['AE_jsim']),2))
+    
+    df = pd.DataFrame(new_data)
+    sns.set_theme(font_scale=0.7, style="whitegrid")
+    sns.barplot(data=df, x=ranges, y='MAE', hue='Approach')
+    return df
+
+
+
 def plot_data_distribution(df_path: str | pd.DataFrame, label: str='a%', label_y: str='n_samples') -> None:
     """Given a labelled dataset print the data distribution of its samples
 
