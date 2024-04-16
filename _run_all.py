@@ -64,7 +64,7 @@ def run_all(operations: list=['build_graph_dict', 'build_embedding_dict', 'effic
         
     if 'compute_tables_stats' in operations:
         print('Table stats computation starting')
-        compute_tables_stats(table_dict_path=table_dict, out_path=table_stats_file)
+        compute_tables_stats(table_dict=table_dict, outpath=table_stats_file)
 
     if 'effectiveness_tests' in operations:
         print('Effectiveness Tests starting')
@@ -83,11 +83,11 @@ if __name__ == '__main__':
     run_all(
         operations=[
             #'build_graph_dict',
-            'train_model',
+            #'train_model',
             #'build_embedding_dict',
             # 'efficiency_tests',
-            # 'compute_tables_stats',
-            'effectiveness_tests'
+            'compute_tables_stats'
+            #'effectiveness_tests'
         ],
         loss_type='MAE',
         table_dict='/home/francesco.pugnaloni/GNNTE/Datasets/1_Gittables/table_dict_796970_good.pkl',
@@ -110,7 +110,7 @@ if __name__ == '__main__':
         #triple_dataset_without_predictions='/home/francesco.pugnaloni/GNNTE/Datasets/1_Gittables/baseline_performances/baseline.csv',
         triple_dataset_without_predictions='/home/francesco.pugnaloni/GNNTE/Datasets/1_Gittables/test.csv',
 
-        table_stats_file='/home/francesco.pugnaloni/GNNTE/tmp/stats.pkl',
+        table_stats_file='/home/francesco.pugnaloni/GNNTE/Datasets/1_Gittables/gittables_stats.csv',
         dropout=0,
         gnn_type='GraphSAGE',
         num_epochs=100
