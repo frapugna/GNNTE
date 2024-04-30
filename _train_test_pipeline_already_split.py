@@ -34,10 +34,10 @@ def train_test_pipeline_split(train_file: str, test_file: str, valid_file: str, 
     """
     set_seed()
     # Load datasets
-    print('Loading datasets, it may take some time....')
-    train_triples = pd.read_csv(train_file)
-    test_triples = pd.read_csv(test_file)
-    valid_triples = pd.read_csv(valid_file)
+    print('Loading datasets, it may take some time')
+    train_triples = pd.read_csv(train_file)[['r_id','s_id','a%']]
+    test_triples = pd.read_csv(test_file)[['r_id','s_id','a%']]
+    valid_triples = pd.read_csv(valid_file)[['r_id','s_id','a%']]
 
     with open(graph_file, 'rb') as f:
         graphs = pickle.load(f)

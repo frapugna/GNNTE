@@ -59,9 +59,9 @@ def run_experiment_instance(model_file: str, table_dict: dict | str=None, graph_
                 'n_rows' : t.shape[0],
                 'n_cols' : t.shape[1],
                 'area' : t.shape[0]*t.shape[1],
-                't_graph_gen' : (end_graph-start)*1000,
-                't_emb_gen' : (end-start_emb)*1000,   
-                't_tot' : (end-start)*1000
+                't_graph_gen' : (end_graph-start),
+                't_emb_gen' : (end-start_emb),   
+                't_tot' : (end-start)
             }
             experiment_data[k] = data
             if embeddings != None:
@@ -172,19 +172,56 @@ if __name__ == '__main__':
 
     # with open('/home/francesco.pugnaloni/GNNTE/Datasets/2_WikiTables/full_table_dict_with_id.pkl', 'rb') as f:
     #     table_dd = pickle.load(f)
+    # run_experiment(
+    #         #model_file='/home/francesco.pugnaloni/GNNTE/models/model_wikidata_450k_GraphSAGE_50ep.pth', 
+            
+    #         #model_file='/home/francesco.pugnaloni/GNNTE/models/wikidata/wikidata_06-03-24_GraphSAGE_50_ep_max_1000_tokens.pth', 
+    #         model_file = '/home/francesco.pugnaloni/GNNTE/model_wikitables.pth',
+    #         #table_dict_path='/home/francesco.pugnaloni/GNNTE/Datasets/just_1k_tables.pkl',
+    #         table_dict_path='/home/francesco.pugnaloni/GNNTE/Datasets/1_Gittables/table_dict_796970_good.pkl',
+    #         iters=3,
+    #         #table_dict_path='/home/francesco.pugnaloni/GNNTE/Datasets/debug_files/tables.pkl',
+    #         #graphs_path='/home/francesco.pugnaloni/GNNTE/Datasets/1_Gittables/balanced_datasets/graph_dict.pkl',
+    #         #experiment_data_file_path="/home/francesco.pugnaloni/GNNTE/test_data/t_exec/gen_emb_seq/gittables/embedding_time_gittables_sha256_64_epochs.pkl",
+    #         #experiment_data_file_path="/home/francesco.pugnaloni/GNNTE/test_data/tmp/tmp.pkl",
+    #         experiment_data_file_path='/home/francesco.pugnaloni/GNNTE/efficiency_embedding_gen/experiments_efficiency_on_gittables_using_wikidata_arm.pkl',
+    #         #embedding_file = '/home/francesco.pugnaloni/GNNTE/test_data/t_exec/end_2_end_overlap_comparison/embeddings_100token_test_gittables.pkl'
+    #         # embedding_file='/home/francesco.pugnaloni/GNNTE/Datasets/2_WikiTables/embeddings/emb_wiki_20_03_sha256.pkl'
+    #         embedding_file='/home/francesco.pugnaloni/GNNTE/Datasets/1_Gittables/embeddings/embeddings_made_with_arm_trained_on_wikidata.pkl'
+    #     )
+    print('Generating embeddings with wikitables for wikitabels')
     run_experiment(
             #model_file='/home/francesco.pugnaloni/GNNTE/models/model_wikidata_450k_GraphSAGE_50ep.pth', 
             
             #model_file='/home/francesco.pugnaloni/GNNTE/models/wikidata/wikidata_06-03-24_GraphSAGE_50_ep_max_1000_tokens.pth', 
-            model_file = '/home/francesco.pugnaloni/GNNTE/models/gittables/gittables_no_0_init_sha256_no_merge_nodes.pth',
+            model_file = '/home/francesco.pugnaloni/GNNTE/model_wikitables.pth',
+            #table_dict_path='/home/francesco.pugnaloni/GNNTE/Datasets/just_1k_tables.pkl',
+            table_dict_path='/home/francesco.pugnaloni/GNNTE/Datasets/2_WikiTables/table_dict.pkl',
+            iters=3,
+            #table_dict_path='/home/francesco.pugnaloni/GNNTE/Datasets/debug_files/tables.pkl',
+            #graphs_path='/home/francesco.pugnaloni/GNNTE/Datasets/1_Gittables/balanced_datasets/graph_dict.pkl',
+            #experiment_data_file_path="/home/francesco.pugnaloni/GNNTE/test_data/t_exec/gen_emb_seq/gittables/embedding_time_gittables_sha256_64_epochs.pkl",
+            #experiment_data_file_path="/home/francesco.pugnaloni/GNNTE/test_data/tmp/tmp.pkl",
+            experiment_data_file_path='/home/francesco.pugnaloni/GNNTE/efficiency_embedding_gen/experiments_efficiency_on_wikitables_using_wikitables_armadillo.pkl',
+            #embedding_file = '/home/francesco.pugnaloni/GNNTE/test_data/t_exec/end_2_end_overlap_comparison/embeddings_100token_test_gittables.pkl'
+            # embedding_file='/home/francesco.pugnaloni/GNNTE/Datasets/2_WikiTables/embeddings/emb_wiki_20_03_sha256.pkl'
+            embedding_file='/home/francesco.pugnaloni/GNNTE/Datasets/2_WikiTables/embeddings/embeddings_made_with_arm_trained_on_wikitables.pkl'
+        )
+    
+    print('Generating embeddings with gittables for wikitabels')
+    run_experiment(
+            #model_file='/home/francesco.pugnaloni/GNNTE/models/model_wikidata_450k_GraphSAGE_50ep.pth', 
+            
+            #model_file='/home/francesco.pugnaloni/GNNTE/models/wikidata/wikidata_06-03-24_GraphSAGE_50_ep_max_1000_tokens.pth', 
+            model_file = '/home/francesco.pugnaloni/GNNTE/best_model_gittables.pth',
             #table_dict_path='/home/francesco.pugnaloni/GNNTE/Datasets/just_1k_tables.pkl',
             #table_dict_path='/home/francesco.pugnaloni/GNNTE/Datasets/1_Gittables/table_dict_796970_good.pkl',
+            iters=1,
             #table_dict_path='/home/francesco.pugnaloni/GNNTE/Datasets/debug_files/tables.pkl',
-            #graphs_path='/home/francesco.pugnaloni/GNNTE/Datasets/debug_files/graphs.pkl',
-            graphs_path='/home/francesco.pugnaloni/GNNTE/Datasets/1_Gittables/balanced_datasets/graph_dict.pkl',
+            graphs_path='/home/francesco.pugnaloni/GNNTE/Datasets/2_WikiTables/graph_dict.pkl',
             #experiment_data_file_path="/home/francesco.pugnaloni/GNNTE/test_data/t_exec/gen_emb_seq/gittables/embedding_time_gittables_sha256_64_epochs.pkl",
             #experiment_data_file_path="/home/francesco.pugnaloni/GNNTE/test_data/tmp/tmp.pkl",
             #embedding_file = '/home/francesco.pugnaloni/GNNTE/test_data/t_exec/end_2_end_overlap_comparison/embeddings_100token_test_gittables.pkl'
             # embedding_file='/home/francesco.pugnaloni/GNNTE/Datasets/2_WikiTables/embeddings/emb_wiki_20_03_sha256.pkl'
-            embedding_file='/home/francesco.pugnaloni/GNNTE/Datasets/1_Gittables/embeddings/emb_64_epoch_gittables_model.pkl'
+            embedding_file='/home/francesco.pugnaloni/GNNTE/Datasets/2_WikiTables/embeddings/embeddings_made_with_arm_trained_on_gittables.pkl'
         )

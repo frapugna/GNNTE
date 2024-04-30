@@ -4,7 +4,7 @@ from data_visualization import *
 import matplotlib.pyplot as plt
 import torch.nn.functional as F
 
-def plot_box_group(df: pd.DataFrame | str, label_list: list, label_y: str='AE') -> None:
+def plot_box_group(df: pd.DataFrame | str, label_list: list, label_y: str='AE', out_pdf: str=None) -> None:
     """Function to compare the overall performances of a list of models with box plots
 
     Args:
@@ -15,8 +15,12 @@ def plot_box_group(df: pd.DataFrame | str, label_list: list, label_y: str='AE') 
     if isinstance(df, str):
         df = pd.read_csv(df)
     plt.figure(figsize=(8, 6))
+    plt.rcParams.update({'font.size': 16})
     try:
-        ax = pd.DataFrame({'Armadillo':df['AE_armadillo'], 'Overlap Set Similarity':df['AE_josie'], 'Jaccard Similarity':df['AE_jsim']}).boxplot(showfliers=False, whis=[0, 100], showmeans=True, meanline=True, medianprops=dict(color='black'), boxprops=dict(color='black'), whiskerprops=dict(color='black'))    
+        try:
+            ax = pd.DataFrame({'Armadillo\nGittables':df['AE_armadillo'], 'Armadillo\nWikitables':df['armadillo_wikitables_AE'],'Overlap Set\nSimilarity':df['AE_josie'], 'Jaccard\nSimilarity':df['AE_jsim']}).boxplot(showfliers=False, whis=[0, 100], showmeans=True, meanline=True, medianprops=dict(color='black'), boxprops=dict(color='black'), whiskerprops=dict(color='black'))#, fontsize=11)    
+        except:
+            ax = pd.DataFrame({'Armadillo\nWikitables':df['armadillo_wikitables_AE'],'Armadillo\nGittables':df['armadillo_gittables_AE'],'Overlap Set\nSimilarity':df['o_set_sim_AE'], 'Jaccard\nSimilarity':df['jsim_AE']}).boxplot(showfliers=False, whis=[0, 100], showmeans=True, meanline=True, medianprops=dict(color='black'), boxprops=dict(color='black'), whiskerprops=dict(color='black'))#, fontsize=11)    
     except:
         ax = df[label_list].boxplot(showfliers=False, whis=[0, 100], showmeans=True, meanline=True, medianprops=dict(color='black'), boxprops=dict(color='black'), whiskerprops=dict(color='black'))    
     
@@ -28,6 +32,8 @@ def plot_box_group(df: pd.DataFrame | str, label_list: list, label_y: str='AE') 
     plt.xlabel('Approach')
     plt.ylabel(label_y)
     plt.grid(False)
+    if isinstance(out_pdf, str):
+        plt.savefig(out_pdf, format="pdf", bbox_inches="tight")
     plt.show()
 
 def predict_overlap_compute_AE(unlabelled: str | pd.DataFrame, embedding_dict: str | dict, out_path: str, mode: str='extend_original_dataset') -> pd.DataFrame:
@@ -92,7 +98,7 @@ def predict_overlap_compute_AE(unlabelled: str | pd.DataFrame, embedding_dict: s
     
     return df_out
 
-def show_mae_per_bin(results_path: str | pd.DataFrame, granularity: float=0.1, plot: bool=True, box: bool=False, label_true: str='overlap_true', label_AE: str='AE') -> None:
+def show_mae_per_bin(results_path: str | pd.DataFrame, granularity: float=0.1, plot: bool=True, box: bool=False, label_true: str='overlap_true', label_AE: str='AE', out_pdf: str=None) -> None:
     """given a dataframe containing the experiment's results display how the mae varies with respect to the expected error
 
     Args:
@@ -117,7 +123,7 @@ def show_mae_per_bin(results_path: str | pd.DataFrame, granularity: float=0.1, p
         box_plot[f'{prev}_{i}'] = t[label_AE]
     if plot:
         if box:
-            print_box_plot(box_plot, 'Correct Label Range', 'Absolute Error (AE)')
+            print_box_plot(box_plot, 'Correct Label Range', 'Absolute Error (AE)', out_pdf=out_pdf)
         else:
             plot_dict(d,'Correct Label Range','MAE')
 
@@ -277,7 +283,7 @@ def prepare_dataset_perc_num_str_nans(labelled_dataset: str | pd.DataFrame, stat
 
     return out_df
 
-def print_box_plot(box_plot: dict, label_x: str=None, label_y: str=None, title: str=None) -> None:
+def print_box_plot(box_plot: dict, label_x: str=None, label_y: str=None, title: str=None, out_pdf: str=None) -> None:
     df = pd.DataFrame(box_plot)
     plt.figure(figsize=(8, 6))
     df.boxplot(showfliers=False, whis=[0, 100], showmeans=True, meanline=True, medianprops=dict(color='black'), boxprops=dict(color='black'), whiskerprops=dict(color='black'))
@@ -287,6 +293,8 @@ def print_box_plot(box_plot: dict, label_x: str=None, label_y: str=None, title: 
     plt.xlabel(label_x)
     plt.ylabel(label_y)
     plt.grid(False)
+    if isinstance(out_pdf, str):
+        plt.savefig(out_pdf, format="pdf", bbox_inches="tight")
     plt.show()
 
 def show_mae_per_perc_num(results_path: str | pd.DataFrame, labels_dict: str | dict, param_key: str, plot: bool=True, box: bool=False, only_text: bool=False, only_num: bool=False) -> None:
@@ -314,7 +322,7 @@ def show_mae_per_perc_num(results_path: str | pd.DataFrame, labels_dict: str | d
             plot_dict(d,'Correct Label Range','MAE')
 
 
-def show_scatter_t_exec_sloth_arm(results: str | pd.DataFrame, x_label: str='tot_area', logx: bool=True, logy: bool=True) -> None:
+def show_scatter_t_exec_sloth_arm(results: str | pd.DataFrame, x_label: str='tot_area', logx: bool=True, logy: bool=True, output_pdf: str=None) -> None:
     """visualize embedding generation time on the y axis and table area on the x axis
 
     Args:
@@ -333,17 +341,22 @@ def show_scatter_t_exec_sloth_arm(results: str | pd.DataFrame, x_label: str='tot
     #areas = data[x_label]
     #columns = data['tot_cols']
     #rows = data['tot_rows']
-    t_execs_sloth = data['total_time']
-    t_exec_arm_total = data['total']
+    try:
+        t_execs_sloth = data['sloth_time']
+    except:
+        t_execs_sloth = data['total_time']
+    t_exec_arm_total = data['armadillo_total_time']
     #t_exec_arm_no_graph = data['embeddings_generation'] + data['overlap_computation']
     #t_exec_arm_no_emb = data['overlap_computation']
     #t_exec_arm_only_graph = data['graphs_generation']
     try:
-        t_exec_new_emb_already_comp = data['overlap_computations_repeated']
+        t_exec_new_emb_already_comp = data['overlap_computations_repeated_armadillo']
     except:
         t_exec_new_emb_already_comp = data['overlap_computation']
 
     x = t_execs_sloth
+    # jsim_time = data['jsim_time']
+    # os_sim_time = data['os_sim_time']
     # x = areas
     # x = columns
     # x = rows
@@ -351,13 +364,13 @@ def show_scatter_t_exec_sloth_arm(results: str | pd.DataFrame, x_label: str='tot
     # Definisci la figura e gli assi per lo scatterplot
     fig, (ax_scatter, ax_kde) = plt.subplots(2, 1, figsize=(8, 8), 
                                             gridspec_kw={'height_ratios': [3, 1]})
-
     # Disegna lo scatterplot
-    #ax_scatter.axline((0, 0), (1, 1), linewidth=1, color='black', ls='--', label='Sloth')
     ax_scatter.scatter(x, x, s=3, c='black', alpha=0.7, edgecolors='black', label='Sloth')
     ax_scatter.scatter(x, t_exec_arm_total, s=3, c='blue', alpha=0.7, edgecolors='blue', label='New Tables')
-    #ax_scatter.scatter(x, t_exec_arm_no_emb, s=3, c='red', alpha=0.7, edgecolors='red', label='Embeddings Already Computed')
     ax_scatter.scatter(x, t_exec_new_emb_already_comp, s=3, c='red', alpha=0.7, edgecolors='red', label='Embeddings Already Computed')
+
+    # ax_scatter.scatter(x, jsim_time, s=3, c='red', alpha=0.7, edgecolors='green', label='Jaccard Similarity')
+    # ax_scatter.scatter(x, os_sim_time, s=3, c='red', alpha=0.7, edgecolors='orange', label='Overlap Set Similarity')
 
     sns.histplot(
         data=x, ax=ax_kde,
@@ -381,14 +394,16 @@ def show_scatter_t_exec_sloth_arm(results: str | pd.DataFrame, x_label: str='tot
     ax_kde.set_xlabel('Sloth t_exec (s)')
     # ax_kde.set_xlabel('Area')
     ax_kde.set_ylabel('Number Of Samples')
-
+    
     # Visualizza il grafico
     plt.tight_layout()
+    if isinstance(output_pdf, str):
+        plt.savefig(output_pdf, format="pdf", bbox_inches="tight")
     plt.show()
 
 def visualize_area_scatter_plot(stats_file: str | pd.DataFrame, label_x: str='tot_area', label_y: str='AE', logx: bool=True, logy: bool=False, 
                                 plot_bisector: bool=False, y_limit_low: int=-4000, y_limit_up: int=4000, limit_y: bool=False, 
-                                x_limit_left: int=-4000, x_limit_right: int=4000,limit_x: bool=False) -> None:
+                                x_limit_left: int=-4000, x_limit_right: int=4000,limit_x: bool=False, out_pdf: str=None) -> None:
     if isinstance(stats_file, str):
         data = pd.read_csv(stats_file)
     else:
@@ -452,6 +467,8 @@ def visualize_area_scatter_plot(stats_file: str | pd.DataFrame, label_x: str='to
 
     # Visualizza il grafico
     plt.tight_layout()
+    if isinstance(out_pdf, str):
+        plt.savefig(out_pdf, format="pdf", bbox_inches="tight")
     plt.show()
 
 

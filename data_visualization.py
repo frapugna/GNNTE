@@ -5,7 +5,7 @@ from tqdm import tqdm
 import numpy as np
 import seaborn as sns
 
-def compare_models_hist(data: pd.DataFrame | str, bin_criterion: str='a%', bins_name: str='Correct Label') -> pd.DataFrame:
+def compare_models_hist(data: pd.DataFrame | str, bin_criterion: str='a%', bins_name: str='Correct Label', out_pdf: str=None, font_scale: float=0.7) -> pd.DataFrame:
     """Function to plot an histogram to compare performances of different models depending on their range of error 
 
     Args:
@@ -32,26 +32,45 @@ def compare_models_hist(data: pd.DataFrame | str, bin_criterion: str='a%', bins_
             t = t[t[bin_criterion] < i]
         
         #curr =  f'{prev}_{i}'
-        curr =  f'[{prev},{i}]'
+        curr =  f'[{prev},\n{i}]'
         #curr =  f'{prev},{i}'
-
-        new_data['Approach'].append('Armadillo')
+        new_data['Approach'].append('Armadillo Gittables')
         new_data[ranges].append(curr)
-        new_data['MAE'].append(round(np.mean(t['AE_armadillo']),2))
+        try:
+            new_data['MAE'].append(round(np.mean(t['AE_armadillo']),2))
+        except: 
+            new_data['MAE'].append(round(np.mean(t['armadillo_gittables_AE']),2))
 
         new_data['Approach'].append('Overlap Set Similarity')
         new_data[ranges].append(curr)
-        new_data['MAE'].append(round(np.mean(t['AE_josie']),2))
+        try:
+            new_data['MAE'].append(round(np.mean(t['AE_josie']),2))
+        except:
+            new_data['MAE'].append(round(np.mean(t['o_set_sim_AE']),2))
 
         new_data['Approach'].append('Jaccard Similarity')
         new_data[ranges].append(curr)
-        new_data['MAE'].append(round(np.mean(t['AE_jsim']),2))
+        try:
+            new_data['MAE'].append(round(np.mean(t['AE_jsim']),2))
+        except:
+            new_data['MAE'].append(round(np.mean(t['jsim_AE']),2))
+        
+        try:
+            new_data['Approach'].append('Armadillo Wikitables')
+            new_data[ranges].append(curr)
+            new_data['MAE'].append(round(np.mean(t['armadillo_wikitables_AE']),2))
+        except:
+            pass
     
     df = pd.DataFrame(new_data)
-    sns.set_theme(font_scale=0.7, style="whitegrid")
+    sns.set_theme(font_scale=font_scale, style="whitegrid")
     sns.barplot(data=df, x=ranges, y='MAE', hue='Approach')
-    return df
 
+    if isinstance(out_pdf, str):
+        plt.tight_layout()
+        
+        plt.savefig(out_pdf, format="pdf", bbox_inches="tight")
+    return df
 
 
 def plot_data_distribution(df_path: str | pd.DataFrame, label: str='a%', label_y: str='n_samples') -> None:
@@ -98,7 +117,7 @@ def plot_data_distribution(df_path: str | pd.DataFrame, label: str='a%', label_y
     # Show the plot
     plt.show()
 
-def visualize_scatter_plot(exp_data_file: str | dict, logx: bool=True, logy: bool=True) -> None:
+def visualize_scatter_plot(exp_data_file: str | dict, logx: bool=True, logy: bool=True, out_pdf: str=None) -> None:
     """visualize embedding generation time on the y axis and table area on the x axis
 
     Args:
@@ -135,7 +154,7 @@ def visualize_scatter_plot(exp_data_file: str | dict, logx: bool=True, logy: boo
     )
     # Imposta i titoli e le etichette degli assi per lo scatterplot
     #ax_scatter.set_title('Embedding generation time with increasing table areas')
-    ax_scatter.set_ylabel('Total Embedding Time (ms)')
+    ax_scatter.set_ylabel('Total Embedding Time (s)')
     
     if logx:
         ax_kde.set_xscale('log')    
@@ -150,6 +169,10 @@ def visualize_scatter_plot(exp_data_file: str | dict, logx: bool=True, logy: boo
 
     # Visualizza il grafico
     plt.tight_layout()
+    
+    if isinstance(out_pdf, str):
+        plt.savefig(out_pdf, format="pdf", bbox_inches="tight")
+
     plt.show()
 
 

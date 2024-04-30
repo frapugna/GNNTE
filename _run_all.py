@@ -1,7 +1,7 @@
 from _script_generate_graph_dict import generate_graph_dictionary
 from _script_embed_all_no_paral import run_experiment
 from _train_test_pipeline_already_split import run_GNNTE_experiment_split
-from _sloth_outputs_processing import recompute_embeddings_overlaps_overlap_computation_time, repeat_test_emb_already_computed
+from _overlap_of_a_pair_effe_effi_processing import recompute_embeddings_overlaps_overlap_computation_time, repeat_test_emb_already_computed
 from _performance_overlap_computation import predict_overlap_compute_AE, prepare_dataset_perc_num_str_nans
 from _table_stats_computation import compute_tables_stats
 import pandas as pd
@@ -85,32 +85,34 @@ if __name__ == '__main__':
             #'build_graph_dict',
             #'train_model',
             #'build_embedding_dict',
-            # 'efficiency_tests',
-            'compute_tables_stats'
+            'efficiency_tests'
+            #'compute_tables_stats',
             #'effectiveness_tests'
         ],
         loss_type='MAE',
-        table_dict='/home/francesco.pugnaloni/GNNTE/Datasets/1_Gittables/table_dict_796970_good.pkl',
-        graph_dict='/home/francesco.pugnaloni/GNNTE/Datasets/1_Gittables/balanced_datasets/graph_dict.pkl',
+        #table_dict='/home/francesco.pugnaloni/GNNTE/Datasets/1_Gittables/table_dict_796970_good.pkl',
+        table_dict='/home/francesco.pugnaloni/GNNTE/Datasets/2_WikiTables/table_dict.pkl',
+        graph_dict='/home/francesco.pugnaloni/GNNTE/Datasets/2_WikiTables/graph_dict.pkl',
         #graph_dict='/home/francesco.pugnaloni/GNNTE/Datasets/2_WikiTables/1M_wikitables_disjointed/graphs_sha256_null_not_0_no_merge_nodes.pkl',
         embedding_generation_method='sha256',
-        model_file='/home/francesco.pugnaloni/GNNTE/model_no_perfect_matches_gittables.pth',
-        #model_file='/home/francesco.pugnaloni/GNNTE/best_model_gittables.pth',
+        #model_file='/home/francesco.pugnaloni/GNNTE/model_no_perfect_matches_gittables.pth',
+        model_file='/home/francesco.pugnaloni/GNNTE/model_wikitables.pth',
         #model_file='/home/francesco.pugnaloni/GNNTE/models/gittables/gittables_no_0_init_sha256_no_merge_nodes_3_layers_dropout_0_batch_64_GraphSAGE_MAE_100_epochs.pth',
-        train_file='/home/francesco.pugnaloni/GNNTE/Datasets/1_Gittables/train_no_perfect_matches.csv',
-        test_file='/home/francesco.pugnaloni/GNNTE/Datasets/1_Gittables/test.csv',
-        valid_file='/home/francesco.pugnaloni/GNNTE/Datasets/1_Gittables/valid.csv',
+        train_file='/home/francesco.pugnaloni/GNNTE/Datasets/2_WikiTables/train.csv',
+        test_file='/home/francesco.pugnaloni/GNNTE/Datasets/2_WikiTables/test.csv',
+        valid_file='/home/francesco.pugnaloni/GNNTE/Datasets/2_WikiTables/valid.csv',
         #embedding_file='/home/francesco.pugnaloni/GNNTE/Datasets/1_Gittables/embeddings/emb_64_batch_size_epoch_gittables_model_MAE.pkl',
         #embedding_file='/home/francesco.pugnaloni/GNNTE/Datasets/1_Gittables/embeddings/embeddings_best_mae_gittables.pkl',
-        embedding_file='/home/francesco.pugnaloni/GNNTE/tmp/em_git_model_trained_without_perfect_matches.pkl',
+        embedding_file='/home/francesco.pugnaloni/GNNTE/Datasets/2_WikiTables/embeddings/embeddings.pkl',
         plot_data_emb_gen=None,
         #plot_data_effectiveness='/home/francesco.pugnaloni/GNNTE/Datasets/1_Gittables/baseline_performances/test_set_similarities_gittables_with_armadillo_predictions_batch_size_128.csv',
-        plot_data_effectiveness='/home/francesco.pugnaloni/GNNTE/tmp/plot_data_effectiveness_git_model_trained_without_perfect_matches.csv',
-        plot_data_efficiency='',
+        plot_data_effectiveness='/home/francesco.pugnaloni/GNNTE/Datasets/2_WikiTables/effectiveness/effectiveness.csv',
+        plot_data_efficiency='/home/francesco.pugnaloni/GNNTE/Datasets/2_WikiTables/efficiency/efficiency.csv',
+        sloth_output_file='/home/francesco.pugnaloni/GNNTE/Datasets/2_WikiTables/test.csv',
         #triple_dataset_without_predictions='/home/francesco.pugnaloni/GNNTE/Datasets/1_Gittables/baseline_performances/baseline.csv',
-        triple_dataset_without_predictions='/home/francesco.pugnaloni/GNNTE/Datasets/1_Gittables/test.csv',
+        triple_dataset_without_predictions='/home/francesco.pugnaloni/GNNTE/Datasets/2_WikiTables/test.csv',
 
-        table_stats_file='/home/francesco.pugnaloni/GNNTE/Datasets/1_Gittables/gittables_stats.csv',
+        table_stats_file='/home/francesco.pugnaloni/GNNTE/Datasets/2_WikiTables/wikitables_stats.csv',
         dropout=0,
         gnn_type='GraphSAGE',
         num_epochs=100
